@@ -25,6 +25,12 @@ This [YouTube Video](https://youtu.be/5vYz37AqSO4) explains how to do it.
 
 ![ezgif-8e9c11636a22c613](https://github.com/user-attachments/assets/4f5a1af0-d89b-4ed9-9c8c-36e678045580)
 
+### Note (about mushroom entity cards animations)
+- In `State Mode:` when the main card entity is active, both icon get colored and animation start playing.
+- In `Number Mode:` when the condition is met, the animations start playing, regardless of the state of the main card entity, so card icon will be still grayed out to indicate that the entity (like a plug) is still `Off`.
+
+### Cards:
+
 <details>
   <summary><strong>1 - smartplug</summary>
 
