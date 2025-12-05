@@ -23,7 +23,13 @@ This [YouTube Video](https://youtu.be/5vYz37AqSO4) explains how to do it.
 
 <hr>
 
+## Batch 1:
 ![ezgif-8e9c11636a22c613](https://github.com/user-attachments/assets/4f5a1af0-d89b-4ed9-9c8c-36e678045580)
+
+## Batch 2:
+![522590522-55a39df8-b28b-427b-8ec2-73221f6d154b](https://github.com/user-attachments/assets/65ba4a4e-bed4-4ee1-8735-03e2bfd67db6)
+
+
 
 ### Note (about mushroom entity cards animations)
 - In `State Mode:` when the main card entity is active, both icon get colored and animation start playing.
@@ -3956,6 +3962,5315 @@ card_mod:
 
 ```
 </details>
+
+<details>
+<summary><strong>31 - Console</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:controller
+icon_color: purple
+name: Console
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS (for "intensity") #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# ---------- TRIGGER DECISION LOGIC ---------- #}
+        {% if use_number %}
+          {% set num = states(number_entity) | float(0) %}
+          {% if number_operator == '>' %}
+            {% set trigger_active = (num > threshold) %}
+          {% elif number_operator == '<' %}
+            {% set trigger_active = (num < threshold) %}
+          {% elif number_operator == '=' %}
+            {% set trigger_active = (num == threshold) %}
+          {% elif number_operator == '>=' %}
+            {% set trigger_active = (num >= threshold) %}
+          {% elif number_operator == '<=' %}
+            {% set trigger_active = (num <= threshold) %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% else %}
+          {% set trigger_active = (states(state_entity) == active_value) %}
+        {% endif %}
+        {# ---------- END TRIGGER LOGIC ---------- #}
+
+        {# Optional intensity from power, just for shaping motion #}
+        {% set power     = states(number_entity) | float(0) %}
+        {% set intensity = (power / 10) | float(0) %}
+        {% if intensity < 0.3 %}{% set intensity = 0.3 %}{% endif %}
+        {% if intensity > 1.6 %}{% set intensity = 1.6 %}{% endif %}
+
+        {% set px  = (1.5 * intensity) | round(2) %}
+        {% set deg = (5.0 * intensity) | round(2) %}
+
+        {% if trigger_active %}
+          {# If use_number is off, it will just use this "active" path always when switch is on #}
+          --shape-animation: controller-rumble 0.5s ease-in-out infinite;
+          --controller-led-animation: controller-led 1.5s ease-in-out infinite;
+          --controller-trail-animation: controller-trail 1.2s ease-out infinite;
+
+          /* Huge RGB glow like your lock example */
+          --glow-1: 0 0 30px 10px rgba(var(--rgb-{{ config.icon_color }}), 1);
+          --glow-2: 0 0 70px 22px rgba(var(--rgb-{{ config.icon_color }}), 0.7);
+          --glow-3: 0 0 120px 42px rgba(var(--rgb-{{ config.icon_color }}), 0.5);
+          --glow-anim: controller-ultraglow 2.0s ease-in-out infinite;
+
+          opacity: 1;
+        {% else %}
+          --shape-animation: none;
+          --controller-led-animation: none;
+          --controller-trail-animation: none;
+
+          --glow-1: none;
+          --glow-2: none;
+          --glow-3: none;
+          --glow-anim: none;
+          opacity: 0.6;
+        {% endif %}
+
+        transform-origin: 50% 50%;
+        position: relative;
+        animation: var(--shape-animation);
+      }
+
+      /* Glow layers like the lock card */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: -10px;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        box-shadow: var(--glow-1), var(--glow-2), var(--glow-3);
+        animation: var(--glow-anim);
+      }
+
+      .shape::after {
+        inset: -22px;
+        box-shadow:
+          0 0 130px 40px rgba(var(--rgb-{{ config.icon_color }}), 0.23),
+          0 0 190px 70px rgba(var(--rgb-{{ config.icon_color }}), 0.15);
+        opacity: 0.9;
+        animation: var(--glow-anim);
+        mix-blend-mode: screen;
+      }
+
+      @keyframes controller-ultraglow {
+        0% {
+          opacity: 0.9;
+          filter: brightness(1);
+        }
+        40% {
+          opacity: 1;
+          filter: brightness(1.4);
+        }
+        70% {
+          opacity: 1;
+          filter: brightness(1.2);
+        }
+        100% {
+          opacity: 0.9;
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes controller-rumble {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(-2px, 1px) rotate(-3deg); }
+        50% { transform: translate(2px, -1px) rotate(3deg); }
+        75% { transform: translate(-1px, 2px) rotate(-1deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+      }
+
+      @keyframes controller-led {
+        0% {
+          box-shadow:
+            0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.8),
+            0 0 16px 0 rgba(var(--rgb-{{ config.icon_color }}), 0.9);
+          filter: drop-shadow(0 0 3px rgba(var(--rgb-{{ config.icon_color }}), 0.8));
+        }
+        33% {
+          box-shadow:
+            0 0 0 6px rgba(0, 210, 255, 0.5),
+            0 0 26px 6px rgba(0, 210, 255, 0.95);
+          filter: drop-shadow(0 0 5px rgba(0, 210, 255, 1));
+        }
+        66% {
+          box-shadow:
+            0 0 0 10px rgba(200, 110, 255, 0.5),
+            0 0 34px 10px rgba(200, 110, 255, 1);
+          filter: drop-shadow(0 0 6px rgba(200, 110, 255, 1));
+        }
+        100% {
+          box-shadow:
+            0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.8),
+            0 0 16px 0 rgba(var(--rgb-{{ config.icon_color }}), 0.9);
+          filter: drop-shadow(0 0 3px rgba(var(--rgb-{{ config.icon_color }}), 0.8));
+        }
+      }
+
+      @keyframes controller-trail {
+        0% {
+          box-shadow:
+            22px 0 22px -16px rgba(0, 255, 255, 0),
+            -22px 0 22px -16px rgba(255, 0, 200, 0);
+        }
+        25% {
+          box-shadow:
+            26px -4px 26px -14px rgba(0, 255, 255, 0.8),
+            -26px 4px 26px -14px rgba(255, 0, 200, 0.7);
+        }
+        55% {
+          box-shadow:
+            20px 4px 24px -14px rgba(0, 255, 160, 0.5),
+            -20px -4px 24px -14px rgba(255, 210, 0, 0.4);
+        }
+        100% {
+          box-shadow:
+            22px 0 22px -16px rgba(0, 255, 255, 0),
+            -22px 0 22px -16px rgba(255, 0, 200, 0);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 25px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>32 - Gaming Rig</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:desktop-tower
+icon_color: white
+name: Gaming Rig
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. STATE CHECK #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. ANIMATION CHECK #}
+        {% set should_animate = false %}
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- STYLING --- */
+
+        {% if is_on %}
+          /* DEVICE IS ON */
+          
+          {% if should_animate %}
+            /* High Power / Gaming Mode */
+            --fan-spin: rgb-fan 2s linear infinite;
+            --case-glow: neon-breathe 2s ease-in-out infinite alternate;
+            --shadow-layer: 
+              0 0 15px 2px rgba(0, 255, 255, 0.6), 
+              0 0 30px 10px rgba(255, 0, 255, 0.4);
+            --fan-display: block;
+          {% else %}
+            /* Idle / Low Power Mode */
+            --fan-spin: none;
+            --case-glow: none;
+            /* Subtle static glow indicating it is ON but idle */
+            --shadow-layer: 0 0 5px 0 rgba(var(--rgb-{{ config.icon_color }}), 0.4);
+            --fan-display: none;
+          {% endif %}
+
+        {% else %}
+          /* DEVICE IS OFF - RESET TO DEFAULTS */
+          --fan-spin: none;
+          --case-glow: none;
+          --shadow-layer: none;
+          --fan-display: none;
+        {% endif %}
+
+        /* Boxy PC Case Shape */
+        border-radius: 10px !important;
+        position: relative;
+        overflow: hidden; 
+        transform: translateZ(0);
+        
+        /* Apply the shadow/glow only when ON */
+        box-shadow: var(--shadow-layer);
+        animation: var(--case-glow);
+      }
+
+      /* THE RGB FAN (Spinning Gradient Background) */
+      .shape::before {
+        content: '';
+        display: var(--fan-display); /* Hidden when OFF or Idle */
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(
+          from 0deg, 
+          #ff0000, 
+          #ff8000, 
+          #ffff00, 
+          #00ff00, 
+          #00ffff, 
+          #0000ff, 
+          #ff00ff, 
+          #ff0000
+        );
+        opacity: 0.5; 
+        animation: var(--fan-spin);
+        mix-blend-mode: screen; 
+      }
+
+      /* THE GLASS PANEL REFLECTION (Static Shine) */
+      .shape::after {
+        content: '';
+        display: var(--fan-display); /* Hidden when OFF */
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%, transparent 100%);
+        pointer-events: none;
+      }
+
+      /* --- ANIMATIONS --- */
+
+      @keyframes rgb-fan {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @keyframes neon-breathe {
+        0% { box-shadow: 0 0 15px 2px rgba(0, 255, 255, 0.6), 0 0 30px 10px rgba(255, 0, 255, 0.4); }
+        100% { box-shadow: 0 0 25px 5px rgba(0, 255, 255, 0.8), 0 0 50px 20px rgba(255, 0, 255, 0.6); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -15px 0 10px -15px !important;
+        padding-right: 10px;
+        z-index: 1; 
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>33 - PC</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:desktop-tower
+icon_color: white
+name: PC
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# -------- TRIGGER DECISION LOGIC -------- #}
+        {% if use_number %}
+          {% set num = states(number_entity) | float(0) %}
+          {% if number_operator == '>' %}
+            {% set trigger_active = (num > threshold) %}
+          {% elif number_operator == '<' %}
+            {% set trigger_active = (num < threshold) %}
+          {% elif number_operator == '=' %}
+            {% set trigger_active = (num == threshold) %}
+          {% elif number_operator == '>=' %}
+            {% set trigger_active = (num >= threshold) %}
+          {% elif number_operator == '<=' %}
+            {% set trigger_active = (num <= threshold) %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% else %}
+          {% set sensor_entity = state_entity %}
+          {% if states(sensor_entity) == active_value %}
+            {% set trigger_active = true %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% endif %}
+        {# ------ END TRIGGER DECISION LOGIC ------ #}
+
+        {% if trigger_active %}
+          /* 1. THE RGB CYCLE: Outer glow */
+          --gamer-glow: rgb-cycle 5s linear infinite;
+          
+          /* 2. THE POWER LED: Blinking Yellow Light */
+          --power-led-anim: yellow-blink 0.5s steps(2, start) infinite;
+          --led-opacity: 1;
+          
+          /* Show colors */
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          /* Stop Animations */
+          --gamer-glow: none;
+          --power-led-anim: none;
+          --led-opacity: 0;
+
+          /* Turn Gray/Monochrome */
+          filter: grayscale(100%);
+          opacity: 0.4;
+        {% endif %}
+
+        /* FORCE SQUARE SHAPE for PC Case look */
+        border-radius: 12px !important;
+        
+        position: relative;
+        transform: translateZ(0); 
+      }
+
+      /* The RGB LED Strip Effect (Outer Glow) */
+      .shape::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        z-index: -1;
+        animation: var(--gamer-glow);
+      }
+
+      /* The Yellow Power Button LED */
+      .shape::after {
+        content: '';
+        position: absolute;
+        
+        /* Positioning the dot to match mdi:desktop-tower power button location */
+        top: 75%;
+        right: 15%; 
+        width: 5px;
+        height: 5px;
+        
+        border-radius: 50%;
+        background-color: #ffff; /* Bright Yellow */
+        box-shadow: 0 0 5px #ffeb3b; /* Yellow Glow */
+        
+        opacity: var(--led-opacity);
+        animation: var(--power-led-anim);
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* RGB RAINBOW CYCLE */
+      @keyframes rgb-cycle {
+        0% {
+          box-shadow: 
+            0 0 10px 2px rgba(255, 0, 0, 0.6),    /* Red */
+            inset 0 0 15px rgba(255, 0, 0, 0.2); 
+        }
+        25% {
+          box-shadow: 
+            0 0 10px 2px rgba(255, 0, 255, 0.6),  /* Purple */
+            inset 0 0 15px rgba(255, 0, 255, 0.2);
+        }
+        50% {
+          box-shadow: 
+            0 0 10px 2px rgba(0, 0, 255, 0.6),    /* Blue */
+            inset 0 0 15px rgba(0, 0, 255, 0.2);
+        }
+        75% {
+          box-shadow: 
+            0 0 10px 2px rgba(0, 255, 255, 0.6),  /* Cyan */
+            inset 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+        100% {
+          box-shadow: 
+            0 0 10px 2px rgba(255, 0, 0, 0.6),    /* Back to Red */
+            inset 0 0 15px rgba(255, 0, 0, 0.2);
+        }
+      }
+
+      /* YELLOW LED BLINK */
+      @keyframes yellow-blink {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.9); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -15px 0 10px -15px !important;
+        padding-right: 10px;
+        z-index: 1; 
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>34 - Home Server</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:server-network
+icon_color: blue
+name: Home Server
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. CHECK STATE (For Color) #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. CHECK ANIMATION LOGIC #}
+        {% set should_animate = false %}
+
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- APPLY STYLES --- */
+
+        /* ANIMATION TOGGLE */
+        {% if should_animate %}
+          /* 1. DISK I/O: Chaotic blinking lights */
+          --disk-activity: hdd-blink 0.5s steps(2, start) infinite;
+          
+          /* 2. NETWORK LOAD: Heartbeat pulsing */
+          --server-throb: network-pulse 1.5s ease-in-out infinite;
+        {% else %}
+          --disk-activity: none;
+          --server-throb: none;
+        {% endif %}
+
+        /* STATE COLOR TOGGLE */
+        {% if is_on %}
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          filter: grayscale(100%);
+          opacity: 0.4;
+        {% endif %}
+
+        /* SQUARE SHAPE: Servers are boxes, not circles */
+        border-radius: 12px !important;
+        
+        transform-origin: 50% 50%;
+        position: relative;
+        animation: var(--server-throb);
+      }
+
+      /* Activity LEDs (The blinking lights) */
+      .shape::before {
+        content: '';
+        position: absolute;
+        bottom: 25%;
+        right: 25%;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        /* Create 3 "LEDs" using box-shadows to avoid multiple elements */
+        box-shadow: 
+          10px 0 0 0 #00ff00, 
+          0 10px 0 0 #ffaa00, 
+          10px 10px 0 0 #00ff00;
+        opacity: 0;
+        animation: var(--disk-activity);
+        z-index: 2;
+      }
+
+      /* Network/Heat Glow (Background) */
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(circle, rgba(var(--rgb-{{ config.icon_color }}), 0.5) 0%, transparent 70%);
+        opacity: 0;
+        animation: var(--server-throb);
+        z-index: 1;
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* Simulates HDD Activity LEDs flickering rapidly */
+      @keyframes hdd-blink {
+        0%   { opacity: 0; }
+        25%  { opacity: 1; }
+        50%  { opacity: 0; }
+        75%  { opacity: 1; }
+        90%  { opacity: 0; }
+        100% { opacity: 1; }
+      }
+
+      /* Simulates Network Load / "Heartbeat" */
+      @keyframes network-pulse {
+        0% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.03); opacity: 0.6; }
+        100% { transform: scale(1); opacity: 0.3; }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>35 - Nintendo Switch</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:nintendo-switch
+icon_color: white
+name: Nintendo Switch
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %} 
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. CHECK STATE (For Color) #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. CHECK ANIMATION LOGIC #}
+        {% set should_animate = false %}
+
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        {% if should_animate %}
+          --joycon-glow: neon-split-big 0.5s ease-in-out infinite alternate;
+          --switch-rumble: haptic-shake 0.4s linear infinite;
+        {% else %}
+          --joycon-glow: none;
+          --switch-rumble: none;
+        {% endif %}
+
+        {% if is_on %}
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          filter: grayscale(100%);
+          opacity: 0.4;
+        {% endif %}
+
+        transform-origin: 50% 50%;
+        position: relative;
+        overflow: visible !important;
+
+        animation: var(--switch-rumble);
+      }
+
+      /* HUGE expanded glow */
+      .shape::before {
+        content: "";
+        position: absolute;
+        inset: -10px;
+        border-radius: inherit;
+        z-index: -1;
+        animation: var(--joycon-glow);
+      }
+
+      /* MASSIVE dual-color neon */
+      @keyframes neon-split-big {
+        0% {
+          box-shadow:
+            /* Left red side (3-layer bloom) */
+            -6px 0 12px rgba(255, 20, 20, 0.5),
+            -12px 0 24px rgba(255, 20, 20, 0.35),
+            -18px 0 36px rgba(255, 20, 20, 0.20),
+
+            /* Right blue side (3-layer bloom) */
+             6px 0 12px rgba(0, 200, 255, 0.5),
+            12px 0 24px rgba(0, 200, 255, 0.35),
+            18px 0 36px rgba(0, 200, 255, 0.20);
+        }
+
+        100% {
+          box-shadow:
+            /* Left — super intense bloom */
+            -12px 0 24px rgba(255, 20, 20, 0.9),
+            -24px 0 40px rgba(255, 20, 20, 0.65),
+            -32px 0 60px rgba(255, 20, 20, 0.40),
+
+            /* Right — super intense bloom */
+             12px 0 24px rgba(0, 200, 255, 0.9),
+             24px 0 40px rgba(0, 200, 255, 0.65),
+             32px 0 60px rgba(0, 200, 255, 0.40);
+        }
+      }
+
+      /* Rumble effect stays unchanged */
+      @keyframes haptic-shake {
+        0%   { transform: translate(0, 0) rotate(0deg); }
+        25%  { transform: translate(-1px, 1px) rotate(-1deg); }
+        50%  { transform: translate(1px, -1px) rotate(1deg); }
+        75%  { transform: translate(-1px, -1px) rotate(0deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display:flex;
+        margin: -17px 0 10px -15px !important;
+        padding-right: 15px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius,12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>36 - Printer</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:printer
+icon_color: amber
+name: Printer
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. CHECK STATE (For Color) #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. CHECK ANIMATION LOGIC #}
+        {% set should_animate = false %}
+
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- APPLY STYLES --- */
+
+        /* ANIMATION TOGGLE */
+        {% if should_animate %}
+          /* 1. SHAKE: Simulates mechanical printing vibration */
+          --printer-shake: printer-vibrate 0.2s linear infinite;
+          
+          /* 2. SCAN: A laser/copier light bar moving down */
+          --scan-beam: scanner-light 1.5s ease-in-out infinite;
+          
+          /* 3. LED: Status light pulsing */
+          --status-led: led-blink 1s infinite alternate;
+        {% else %}
+          --printer-shake: none;
+          --scan-beam: none;
+          --status-led: none;
+        {% endif %}
+
+        /* STATE COLOR TOGGLE */
+        {% if is_on %}
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          filter: grayscale(100%);
+          opacity: 0.4;
+        {% endif %}
+
+        transform-origin: 50% 50%;
+        position: relative;
+        overflow: hidden; /* Keeps the scan beam inside the circle shape */
+        
+        /* Apply the mechanical shake to the whole icon */
+        animation: var(--printer-shake);
+      }
+
+      /* The Scanning Light Beam */
+      .shape::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 30%; /* Height of the beam */
+        background: linear-gradient(to bottom, 
+          transparent 0%, 
+          rgba(255, 255, 255, 0.8) 50%, 
+          transparent 100%);
+        top: -50%;
+        animation: var(--scan-beam);
+        pointer-events: none;
+        mix-blend-mode: overlay;
+      }
+
+      /* The Status LED (Green/Yellow dot) */
+      .shape::after {
+        content: '';
+        position: absolute;
+        bottom: 15%;
+        right: 15%;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #00ff00; /* Green LED */
+        box-shadow: 0 0 5px #00ff00;
+        opacity: 0; /* Hidden by default unless animating */
+        animation: var(--status-led);
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* Mechanical Shake */
+      @keyframes printer-vibrate {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(-1px, 1px); }
+        50% { transform: translate(1px, -1px); }
+        75% { transform: translate(-1px, -1px); }
+        100% { transform: translate(0, 0); }
+      }
+
+      /* Scanner Bar Movement */
+      @keyframes scanner-light {
+        0% { top: -40%; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 120%; opacity: 0; }
+      }
+
+      /* Status LED Blinking */
+      @keyframes led-blink {
+        0% { opacity: 0; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1.2); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>37 - Air Purifier</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:air-purifier
+icon_color: light-blue
+name: Air Purifier
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. CHECK STATE (For Color) #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. CHECK ANIMATION LOGIC #}
+        {% set should_animate = false %}
+
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {# If not using number, animate whenever ON #}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- APPLY STYLES --- */
+
+        /* ANIMATION TOGGLE */
+        {% if should_animate %}
+          /* 1. RIPPLE: Represents clean air spreading out */
+          --air-flow: clean-air-ripple 2s infinite ease-out;
+          /* 2. BREATH: Represents the intake motor humming */
+          --core-breath: motor-breath 3s ease-in-out infinite;
+        {% else %}
+          --air-flow: none;
+          --core-breath: none;
+        {% endif %}
+
+        /* STATE COLOR TOGGLE */
+        {% if is_on %}
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          filter: grayscale(100%);
+          opacity: 0.4;
+        {% endif %}
+
+        transform-origin: 50% 50%;
+        position: relative;
+        /* Ensure the ripple is visible outside the shape */
+        overflow: visible !important;
+        
+        /* Apply the breathing animation to the main shape */
+        animation: var(--core-breath);
+      }
+
+      /* Inner Ripple (Fast) */
+      .shape::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        
+        animation: var(--air-flow);
+        z-index: -1;
+      }
+
+      /* Outer Ripple (Delayed, Slower) */
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: rgba(var(--rgb-{{ config.icon_color }}), 0.1);
+        animation: var(--air-flow);
+        animation-duration: 3s; /* Slower expansion */
+        animation-delay: 0.5s;
+        z-index: -2;
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* Expanding Rings representing Airflow */
+      @keyframes clean-air-ripple {
+        0% {
+          transform: scale(1);
+          opacity: 0.8;
+          box-shadow: 0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.4);
+        }
+        100% {
+          transform: scale(2.5);
+          opacity: 0;
+          box-shadow: 0 0 20px 20px rgba(var(--rgb-{{ config.icon_color }}), 0);
+        }
+      }
+
+      /* Gentle "Humming" motion of the device */
+      @keyframes motor-breath {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(0.95); opacity: 0.9; }
+        100% { transform: scale(1); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>38 - Awtrix Clock</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:clock-digital
+icon_color: cyan
+name: Awtrix Clock
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. CHECK STATE (For Color) #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. CHECK ANIMATION LOGIC #}
+        {% set should_animate = false %}
+
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- APPLY STYLES --- */
+
+        /* ANIMATION TOGGLE */
+        {% if should_animate %}
+          /* 1. SCROLLER: Simulates text/rainbows scrolling across */
+          --matrix-scroll: pixel-scroll 1.5s linear infinite;
+          
+          /* 2. REFRESH RATE: Subtle 60hz flicker simulation */
+          --matrix-flicker: refresh-flicker 0.1s steps(2) infinite;
+        {% else %}
+          --matrix-scroll: none;
+          
+          /* Idle breathing when ON but not active */
+          --matrix-flicker: idle-breathe 4s ease-in-out infinite;
+        {% endif %}
+
+        /* STATE COLOR TOGGLE */
+        {% if is_on %}
+          filter: grayscale(0%);
+          opacity: 1;
+        {% else %}
+          filter: grayscale(100%);
+          opacity: 0.4;
+          --matrix-flicker: none; /* No breathing when off */
+        {% endif %}
+
+        /* THE MATRIX SHAPE */
+        border-radius: 8px !important; /* Slightly rounded corners like Ulanzi case */
+        transform-origin: 50% 50%;
+        position: relative;
+        overflow: hidden;
+        
+        /* Apply the grid pattern directly to the shape background */
+        background-image: 
+          linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px) !important;
+        background-size: 4px 4px !important; /* Creates the "Pixel" look */
+        
+        animation: var(--matrix-flicker);
+      }
+
+      /* The Scrolling Marquee / Notification Light */
+      .shape::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%; /* Start off screen */
+        width: 100%;
+        height: 100%;
+        
+        /* Rainbow Gradient Bar */
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(255, 0, 0, 0.6) 20%, 
+          rgba(255, 255, 0, 0.6) 40%, 
+          rgba(0, 255, 0, 0.6) 60%, 
+          rgba(0, 255, 255, 0.6) 80%, 
+          transparent 100%
+        );
+        mix-blend-mode: color-dodge;
+        animation: var(--matrix-scroll);
+      }
+
+      /* CRT/LED Scanline Glare */
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.1) 50%);
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* Simulates text/colors scrolling left to right */
+      @keyframes pixel-scroll {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+
+      /* Simulates the subtle refresh rate of LED matrices */
+      @keyframes refresh-flicker {
+        0% { opacity: 1; }
+        100% { opacity: 0.95; }
+      }
+
+      /* Standby breathing */
+      @keyframes idle-breathe {
+        0% { filter: brightness(1); }
+        50% { filter: brightness(1.2); }
+        100% { filter: brightness(1); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -15px 0 10px -15px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>39 - Freezer / Refrigerator</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:fridge-industrial
+icon_color: white
+name: Freezer / Refrigerator
+card_mod:
+  style:
+    .: |
+      ha-card {
+        /* ================= USER CONFIGURATION ================= */
+        
+        {% set use_number      = false %}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+        {% set number_entity   = 'sensor.plug_power' %}
+
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        
+        /* ====================================================== */
+
+        /* --- LOGIC ENGINE (Do not edit) --- */
+        {% if use_number %}
+          {% set num = states(number_entity) | float(0) %}
+          {% if number_operator == '>' %} {% set active = (num > threshold) %}
+          {% elif number_operator == '<' %} {% set active = (num < threshold) %}
+          {% elif number_operator == '=' %} {% set active = (num == threshold) %}
+          {% elif number_operator == '>=' %} {% set active = (num >= threshold) %}
+          {% elif number_operator == '<=' %} {% set active = (num <= threshold) %}
+          {% else %} {% set active = false %} {% endif %}
+        {% else %}
+          {% set active = states(state_entity) == active_value %}
+        {% endif %}
+
+        /* --- DEFINE VARIABLES BASED ON STATE --- */
+        /* These variables are passed down to the icon and used here */
+        
+        /* Card Styles */
+        --card-bg: {{ 'linear-gradient(to bottom, #2C5364, #203A43, #0F2027)' if active else 'var(--ha-card-background, var(--card-background-color, white))' }};
+       
+        --card-shadow: {{ 'inset 0 0 30px rgba(200, 255, 255, 0.6)' if active else 'var(--ha-card-box-shadow, none)' }};
+        
+        /* Snow Visibility */
+        --snow-display: {{ 'block' if active else 'none' }};
+        
+        /* Text Colors */
+        --primary-text-color: {{ '#e0f7fa' if active else 'var(--primary-text-color)' }};
+        --secondary-text-color: {{ '#b2ebf2' if active else 'var(--secondary-text-color)' }};
+        
+        /* Icon Animations (Passed to Shadow DOM) */
+        --custom-icon-anim: {{ 'compressor-rumble 0.2s linear infinite' if active else 'none' }};
+        --custom-icon-shadow: {{ '0 0 25px 5px rgba(255, 255, 255, 0.6)' if active else 'none' }};
+
+        /* --- APPLY STYLES --- */
+
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius,12px));
+        background: var(--card-bg) !important;
+        
+        box-shadow: var(--card-shadow) !important;
+        
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.5s ease;
+      }
+
+      /* --- LAYER 1: HEAVY FLAKES (Slow) --- */
+      ha-card::before {
+        content: '';
+        display: var(--snow-display);
+        position: absolute;
+        inset: 0;
+        background-image: 
+          radial-gradient(circle at 20px 30px, white 2px, transparent 3px),
+          radial-gradient(circle at 50px 160px, white 2px, transparent 3px),
+          radial-gradient(circle at 90px 40px, white 2px, transparent 3px),
+          radial-gradient(circle at 130px 80px, white 2px, transparent 3px),
+          radial-gradient(circle at 160px 120px, white 2px, transparent 3px),
+          radial-gradient(circle at 240px 300px, white 2px, transparent 3px),
+          radial-gradient(circle at 280px 100px, white 2px, transparent 3px);
+        background-size: 300px 400px; 
+        background-repeat: repeat;
+        animation: snow-fall-layer1 10s linear infinite;
+        opacity: 0.9;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* --- LAYER 2: FINE BLIZZARD (Fast) --- */
+      ha-card::after {
+        content: '';
+        display: var(--snow-display);
+        position: absolute;
+        inset: 0;
+        background-image: 
+          radial-gradient(circle at 10px 10px, rgba(255,255,255,0.7) 1px, transparent 2px),
+          radial-gradient(circle at 30px 90px, rgba(255,255,255,0.7) 1px, transparent 2px),
+          radial-gradient(circle at 80px 50px, rgba(255,255,255,0.7) 1px, transparent 2px),
+          radial-gradient(circle at 110px 190px, rgba(255,255,255,0.7) 1px, transparent 2px),
+          radial-gradient(circle at 150px 100px, rgba(255,255,255,0.7) 1px, transparent 2px),
+          radial-gradient(circle at 220px 250px, rgba(255,255,255,0.7) 1px, transparent 2px);
+        background-size: 300px 300px;
+        animation: snow-fall-layer2 5s linear infinite;
+        opacity: 0.6;
+        pointer-events: none;
+        z-index: 0;
+        
+      }
+
+      /* Fix icon z-index */
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display:flex;
+        margin: -18px 0 10px -18px !important;
+        padding-right: 15px;
+
+      }
+      .mushroom-state-info {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* --- SEAMLESS FALLING ANIMATIONS --- */
+      @keyframes snow-fall-layer1 {
+        from { background-position: 0 0; }
+        to   { background-position: 0 400px; }
+      }
+      @keyframes snow-fall-layer2 {
+        from { background-position: 0 0; }
+        to   { background-position: 0 300px; }
+      }
+    mushroom-shape-icon$: |
+      .shape {
+        --shape-animation: var(--custom-icon-anim) !important;
+        ##box-shadow: var(--custom-icon-shadow) !important;
+        opacity: 1;
+        overflow: visible !important;
+      }
+
+      /* Define the Keyframe for the icon here */
+      @keyframes compressor-rumble {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(-1px, 0.5px); }
+        50% { transform: translate(1px, -0.5px); }
+        75% { transform: translate(-0.5px, 0.5px); }
+        100% { transform: translate(0, 0); }
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>40 - Vibration</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:vibrate
+icon_color: red
+name: Vibration
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# -------- TRIGGER DECISION LOGIC -------- #}
+        {% if use_number %}
+          {% set num = states(number_entity) | float(0) %}
+          {% if number_operator == '>' %}
+            {% set trigger_active = (num > threshold) %}
+          {% elif number_operator == '<' %}
+            {% set trigger_active = (num < threshold) %}
+          {% elif number_operator == '=' %}
+            {% set trigger_active = (num == threshold) %}
+          {% elif number_operator == '>=' %}
+            {% set trigger_active = (num >= threshold) %}
+          {% elif number_operator == '<=' %}
+            {% set trigger_active = (num <= threshold) %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% else %}
+          {% set sensor_entity = state_entity %}
+          {% if states(sensor_entity) == active_value %}
+            {% set trigger_active = true %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% endif %}
+        {# ------ END TRIGGER DECISION LOGIC ------ #}
+
+        {% if trigger_active %}
+          --shape-animation: disposal-shake 0.5s linear infinite;
+          --warp-animation: disposal-shockwave 0.8s ease-out infinite;
+          --stream-animation: disposal-pulse 1.5s ease-in-out infinite;
+          opacity: 1;
+        {% else %}
+          --shape-animation: none;
+          --warp-animation: none;
+          --stream-animation: none;
+          opacity: 1;
+        {% endif %}
+
+        transform-origin: 50% 50%;
+        position: relative;
+      }
+
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        animation: var(--warp-animation);
+      }
+
+      .shape::after {
+        mix-blend-mode: overlay;
+        animation: var(--stream-animation);
+      }
+
+      /* THE SHAKE: Rapid movement to simulate heavy grinding motor */
+      @keyframes disposal-shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+      }
+
+      /* THE SHOCKWAVE: Fast, aggressive expansion */
+      @keyframes disposal-shockwave {
+        0% {
+          box-shadow: 0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.8);
+        }
+        70% {
+          box-shadow: 0 0 0 15px rgba(var(--rgb-{{ config.icon_color }}), 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0);
+        }
+      }
+
+      /* THE PULSE: Secondary glow to add "heat" to the look */
+      @keyframes disposal-pulse {
+        0% {
+          box-shadow: inset 0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.4);
+        }
+        50% {
+           box-shadow: inset 0 0 10px 4px rgba(var(--rgb-{{ config.icon_color }}), 0.1);
+        }
+        100% {
+          box-shadow: inset 0 0 0 0 rgba(var(--rgb-{{ config.icon_color }}), 0.4);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -18px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>41 - Water Pump</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:pump
+icon_color: blue
+name: Water Pump
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {# true = number mode, false = state mode #}
+        {% set use_number      = false %}
+
+        {# STATE MODE SETTINGS #}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+
+        {# OPTIONAL: NUMBER MODE SETTINGS #}
+        {% set number_entity   = 'sensor.plug_power' %}
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# 1. STATE CHECK #}
+        {% set is_on = states(state_entity) == active_value %}
+
+        {# 2. ANIMATION CHECK #}
+        {% set should_animate = false %}
+        {% if is_on %}
+          {% if use_number %}
+            {% set num = states(number_entity) | float(0) %}
+            {% if number_operator == '>' %}
+              {% set should_animate = (num > threshold) %}
+            {% elif number_operator == '<' %}
+              {% set should_animate = (num < threshold) %}
+            {% elif number_operator == '=' %}
+              {% set should_animate = (num == threshold) %}
+            {% elif number_operator == '>=' %}
+              {% set should_animate = (num >= threshold) %}
+            {% elif number_operator == '<=' %}
+              {% set should_animate = (num <= threshold) %}
+            {% endif %}
+          {% else %}
+            {% set should_animate = true %}
+          {% endif %}
+        {% endif %}
+
+        /* --- STYLING --- */
+
+        {% if is_on %}
+          /* DEVICE IS ON */
+          
+          {% if should_animate %}
+            /* ACTIVELY PUMPING */
+            /* 1. Internal Impeller Spin */
+            --impeller-spin: hydro-spin 0.8s linear infinite;
+            /* 2. Motor Vibration */
+            --pump-rumble: motor-shake 0.1s ease-in-out infinite alternate;
+            /* 3. Water Pressure Waves */
+            --pressure-flow: flow-ripple 1.5s ease-out infinite;
+            --effect-display: block;
+          {% else %}
+            /* IDLE (Water present but not moving) */
+            --impeller-spin: none;
+            --pump-rumble: none;
+            --pressure-flow: none;
+            --effect-display: none;
+          {% endif %}
+
+        {% else %}
+          /* DEVICE IS OFF */
+          --impeller-spin: none;
+          --pump-rumble: none;
+          --pressure-flow: none;
+          --effect-display: none;
+        {% endif %}
+
+        border-radius: 50%;
+        position: relative;
+        overflow: visible !important;
+        transform: translateZ(0);
+        
+        /* Shake the housing */
+        animation: var(--pump-rumble);
+      }
+
+      /* THE INTERNAL IMPELLER (Spinning Gradient) */
+      .shape::before {
+        content: '';
+        display: var(--effect-display);
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        /* Creates a spinning "fan blade" look inside the color */
+        background: conic-gradient(
+          from 0deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.4) 25%,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(255, 255, 255, 0.4) 75%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        animation: var(--impeller-spin);
+        mix-blend-mode: overlay;
+        z-index: 1; /* Inside the shape */
+      }
+
+      /* THE PRESSURE WAVES (Outer flow) */
+      .shape::after {
+        content: '';
+        display: var(--effect-display);
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid rgba(var(--rgb-{{ config.icon_color }}), 0.6);
+        opacity: 0;
+        animation: var(--pressure-flow);
+        z-index: -1; /* Outside the shape */
+      }
+
+      /* --- ANIMATIONS --- */
+
+      /* Rapid Impeller Rotation */
+      @keyframes hydro-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* High-frequency mechanical vibration */
+      @keyframes motor-shake {
+        0% { transform: translate(0.5px, 0.5px); }
+        100% { transform: translate(-0.5px, -0.5px); }
+      }
+
+      /* Expanding Water Ripples */
+      @keyframes flow-ripple {
+        0% {
+          transform: scale(1);
+          opacity: 0.8;
+          border-width: 4px;
+        }
+        100% {
+          transform: scale(1.6);
+          opacity: 0;
+          border-width: 0px;
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -17px 0 10px -17px !important;
+        padding-right: 10px;
+        z-index: 1;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>42 - Washing Machine</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:washing-machine
+icon_color: blue
+name: Washing Machine
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== USER CONFIG ========== #}
+        {% set use_number      = false %}
+        {% set state_entity    = 'switch.plug_6_local' %}
+        {% set active_value    = 'on' %}
+        {% set number_entity   = 'sensor.plug_power' %}
+        {# '>' '<' '=' '>=' '<=' #}
+        {% set number_operator = '>' %}
+        {% set threshold       = 0.0 %}
+        {# ========== END USER CONFIG ====== #}
+
+        {# ======== TRIGGER DECISION LOGIC ======== #}
+        {% if use_number %}
+          {% set num = states(number_entity) | float(0) %}
+          {% if number_operator == '>' %}
+            {% set trigger_active = (num > threshold) %}
+          {% elif number_operator == '<' %}
+            {% set trigger_active = (num < threshold) %}
+          {% elif number_operator == '=' %}
+            {% set trigger_active = (num == threshold) %}
+          {% elif number_operator == '>=' %}
+            {% set trigger_active = (num >= threshold) %}
+          {% elif number_operator == '<=' %}
+            {% set trigger_active = (num <= threshold) %}
+          {% else %}
+            {% set trigger_active = false %}
+          {% endif %}
+        {% else %}
+          {% set trigger_active = (states(state_entity) == active_value) %}
+        {% endif %}
+
+        {# Logic for Animations #}
+        {% if trigger_active %}
+           opacity: 1;
+           --wash-glow: ultra-wash-glow 1.8s ease-in-out infinite;
+           --wash-drum: spin-laundry 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+           /* Added the 'thump' to match the intense style of the plug example */
+           animation: ultra-wash-thump 1.8s ease-in-out infinite;
+        {% else %}
+           opacity: 0.8;
+           --wash-glow: none;
+           --wash-drum: none;
+           animation: none;
+        {% endif %}
+        
+        isolation: isolate; 
+        position: relative;
+      }
+
+      /* LAYER 3 (Top): The Icon Frame */
+      .shape ha-icon {
+        z-index: 10;
+        position: relative;
+        display: block;
+      }
+
+      /* LAYER 2 (Middle): The Spinning Drum Illusion */
+      .shape::after {
+        content: "";
+        position: absolute;
+        top: 58%; 
+        left: 50%;
+        width: 24px; 
+        height: 24px;
+        border-radius: 50%;
+        z-index: 2; 
+        
+        /* The "Wet Clothes" Texture */
+        background: conic-gradient(
+          from 0deg,
+          transparent 0deg,
+          var(--icon-color) 40deg,
+          transparent 100deg,
+          var(--icon-color) 160deg, 
+          var(--icon-color) 200deg,
+          transparent 280deg,
+          var(--icon-color) 320deg
+        );
+        filter: blur(0.8px); 
+        opacity: 0.7;
+
+        /* Apply Animation */
+        animation: var(--wash-drum);
+        
+        /* Hide if not active */
+        {% if not trigger_active %}
+          display: none;
+        {% endif %}
+      }
+
+      /* LAYER 1 (Bottom): The ULTRA Glow */
+      .shape::before {
+        content: '';
+        position: absolute;
+        inset: -4px; /* Expand glow slightly outside */
+        border-radius: 50%;
+        z-index: 1; 
+        animation: var(--wash-glow);
+      }
+
+      /* === ANIMATIONS === */
+
+      @keyframes spin-laundry {
+        0%   { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
+      /* THE REQUESTED ULTRA GLOW (Double Shadow Layer) */
+      @keyframes ultra-wash-glow {
+        0% {
+          box-shadow:
+            0 0 10px 3px rgba(var(--rgb-blue), 0.6),
+            0 0 20px 8px rgba(var(--rgb-blue), 0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 18px 6px rgba(var(--rgb-blue), 0.9),
+            0 0 32px 12px rgba(var(--rgb-blue), 0.4);
+        }
+        100% {
+          box-shadow:
+            0 0 10px 3px rgba(var(--rgb-blue), 0.6),
+            0 0 20px 8px rgba(var(--rgb-blue), 0.3);
+        }
+      }
+
+      /* THUMP ANIMATION (Matches the plug scale effect) */
+      @keyframes ultra-wash-thump {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.05); } 
+        100% { transform: scale(1); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -16px 0 10px -16px !important;
+        padding-right: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>43 - 3D Printer</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.3d_printer_progress
+tap_action:
+  action: more-info
+icon: mdi:printer-3d-nozzle
+icon_color: purple
+name: 3D Printer
+hold_action:
+  action: none
+double_tap_action:
+  action: none
+card_mod:
+  style:
+    .: |
+      ha-card {
+        /* ================= USER SETTINGS ================= */
+        
+        {% set max_val = 100 %} 
+        
+        /* ================================================= */
+
+        /* --- LOGIC --- */
+        {% set val = states(config.entity) | float(0) %}
+        {% set active = val > 0 and val < max_val %}
+        {% set is_done = val >= max_val %}
+        
+        /* Calculate Percentage Width */
+        {% set width_pct = (val / max_val * 100) | round(2) %}
+        {% if width_pct > 100 %}{% set width_pct = 100 %}{% endif %}
+        
+        /* --- CSS VARIABLES --- */
+        --bar-width: {{ width_pct }}%;
+        --bar-opacity: {{ 1 if active else 0 }};
+        --done-opacity: {{ 1 if is_done else 0 }};
+        
+        /* Icon Variables */
+        --custom-icon-anim: {{ 'printer-sequence 2.3s linear infinite' if active else 'none' }};
+        --custom-icon-shadow: {{ '0 0 10px 5px rgba(var(--rgb-' ~ config.icon_color ~ '), 0.6)' if active else 'none' }};
+        --custom-icon-opacity: {{ '1' if active else '1' }};
+        
+        /* --- CARD STYLING LOGIC --- */
+        /* Only apply the dark custom background if ACTIVE. Otherwise, use default theme. */
+        {% if active %}
+          background-color: #1c1c1c !important;
+          border: none !important;
+          /* Ambient Glow */
+          background-image: radial-gradient(circle at 24px 24px, rgba(var(--rgb-{{ config.icon_color }}), 0.35) 0%, rgba(var(--rgb-{{ config.icon_color }}), 0.1) 40%, transparent 80%),
+                            linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.1)) !important;
+        {% else %}
+          /* When Done/Idle: Reset to defaults (no custom BG color, standard border behavior if any) */
+          background-image: none !important;
+          box-shadow: none !important;
+          /* We don't set background-color here, letting the theme take over */
+        {% endif %}
+
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.5s ease;
+        background-size: 100% 100%, 100% 6px !important;
+        background-position: top left, bottom left !important;
+        background-repeat: no-repeat !important;
+      }
+
+      /* --- THE "DONE" BADGE --- */
+      ha-card::before {
+        content: 'DONE';
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: #00ff00;
+        background: rgba(0, 255, 0, 0.15);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        padding: 2px 6px;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        
+        opacity: var(--done-opacity);
+        transform: scale(var(--done-opacity));
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none; /* Let clicks pass through */
+      }
+
+      /* --- ACTIVE PROGRESS BAR (BEAM) --- */
+      ha-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0;
+        height: 6px;
+        width: var(--bar-width);
+        
+        background: linear-gradient(90deg, 
+          rgba(var(--rgb-{{ config.icon_color }}), 0.4) 0%, 
+          rgba(var(--rgb-{{ config.icon_color }}), 1) 100%
+        );
+        
+        box-shadow: 0 -2px 10px rgba(var(--rgb-{{ config.icon_color }}), 0.8);
+        opacity: var(--bar-opacity);
+        transition: width 0.5s ease-out, opacity 0.5s ease;
+        animation: bar-flow 2s infinite linear;
+        pointer-events: none;
+      }
+
+      @keyframes bar-flow {
+        0% { filter: brightness(1); }
+        50% { filter: brightness(1.3); }
+        100% { filter: brightness(1); }
+      }
+
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -20px 0 10px -20px !important;
+        padding-right: 15px;
+        padding-bottom: 15px;
+      }
+    mushroom-shape-icon$: |
+      .shape {
+        --shape-animation: var(--custom-icon-anim) !important;
+        box-shadow: var(--custom-icon-shadow) !important;
+        opacity: var(--custom-icon-opacity) !important;
+        transform-origin: 50% 80%;
+      }
+      @keyframes printer-sequence {
+        0%   { transform: translate(-5px, 4px) scale(0.96); }
+        15%  { transform: translate(5px, 4px) scale(0.96); }
+        16%  { transform: translate(5px, 2px) scale(0.98); }
+        30%  { transform: translate(-5px, 2px) scale(0.98); }
+        31%  { transform: translate(-5px, 0px) scale(1); }
+        45%  { transform: translate(5px, 0px) scale(1); }
+        46%  { transform: translate(5px, -2px) scale(1.02); }
+        60%  { transform: translate(-5px, -2px) scale(1.02); }
+        61%  { transform: translate(-5px, -4px) scale(1.04); }
+        80%  { transform: translate(5px, -4px) scale(1.04); }
+        100% { transform: translate(-5px, 4px) scale(0.96); }
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>44 - Open Contact (Door)</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: binary_sensor.contact_front_door_contact
+tap_action:
+  action: more-info
+icon: mdi:door
+name: Contact (Door)
+icon_color: red
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {% set is_open = is_state(config.entity, 'on') %}
+
+        /* LOGIC: Define colors and animations based on state */
+        {% if is_open %}
+           /* OPEN: Red, Dark Red Shape, Animated */
+           --icon-color-set: rgb(244, 67, 54);
+           --shape-color-set: rgba(160, 0, 0, 0.15); 
+           --shape-animation: door-soft-open 1.7s ease-in-out infinite;
+           /* Increased duration slightly for smoother persistent glow */
+           --glow-animation: door-soft-glow 2.5s ease-in-out infinite;
+           --beam-animation: door-soft-beam 2.5s ease-in-out infinite;
+           --icon-filter: drop-shadow(0 0 6px rgba(160, 0, 0, 0.95));
+        {% else %}
+           /* CLOSED: Green, Dark Green Shape, Static */
+           --icon-color-set: rgb(76, 175, 80);
+           --shape-color-set: rgba(0, 80, 0, 0.4);
+           --shape-animation: none;
+           --glow-animation: none;
+           --beam-animation: none;
+           --icon-filter: none;
+        {% endif %}
+
+        /* Apply the variable colors defined above */
+        background-color: var(--shape-color-set) !important;
+        
+        /* Standard positioning */
+        position: relative;
+        transform-origin: 25% 50%;
+        animation: var(--shape-animation);
+      }
+
+      /* Color and Filter for the Icon itself */
+      .shape ha-icon {
+        color: var(--icon-color-set) !important;
+        filter: var(--icon-filter);
+      }
+
+      /* --- ANIMATION LAYERS --- */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      /* Inner Glow */
+      .shape::before {
+        inset: -10px;
+        animation: var(--glow-animation);
+      }
+
+      /* Outer Beam */
+      .shape::after {
+        inset: -15px;
+        animation: var(--beam-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* --- KEYFRAMES --- */
+      @keyframes door-soft-open {
+        0%   { transform: rotate(0deg); }
+        40%  { transform: rotate(-9deg); }
+        70%  { transform: rotate(-6deg); }
+        100% { transform: rotate(0deg); }
+      }
+
+      @keyframes door-soft-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(160, 0, 0, 0.7),
+            0 0 40px 6 rgba(160, 0, 0, 0.6),
+            0 0 80px 14px rgba(160, 0, 0, 0.4);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(200, 0, 0, 1),
+            0 0 70px 16px rgba(200, 0, 0, 0.95),
+            0 0 120px 28px rgba(200, 0, 0, 0.7);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(160, 0, 0, 0.7),
+            0 0 40px 6 rgba(160, 0, 0, 0.6),
+            0 0 80px 14px rgba(160, 0, 0, 0.4);
+        }
+      }
+
+      /* UPDATED: Huge halo now never fully disappears */
+      @keyframes door-soft-beam {
+        0% {
+          /* Small, persistent base glow */
+          box-shadow:
+            0 0 40px 10px rgba(160, 0, 0, 0.3),
+            0 0 60px 20px rgba(100, 0, 0, 0.2);
+          opacity: 0.4; 
+        }
+        50% {
+          /* Maximum Intense Glow */
+          box-shadow:
+            0 0 160px 60px rgba(230, 20, 20, 0.8),
+            0 0 230px 100px rgba(160, 0, 0, 0.7);
+          opacity: 1;
+        }
+        100% {
+           /* Return to base glow */
+          box-shadow:
+            0 0 40px 10px rgba(160, 0, 0, 0.3),
+            0 0 60px 20px rgba(100, 0, 0, 0.2);
+          opacity: 0.4;
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 25px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>45 - Garage Door</strong></summary>
+
+```yaml
+type: custom:mushroom-cover-card
+entity: cover.garage_door
+show_buttons_control: true
+show_position_control: true
+show_tilt_position_control: true
+fill_container: false
+icon: ""
+card_mod:
+  style:
+    mushroom-shape-icon$: >
+      .shape {
+        /* --- LOGIC BLOCK --- */
+        {% set status = states(config.entity) %}
+        
+        {% if status == 'closed' %}
+          /* SECURE: Green */
+          --main-color: var(--rgb-green);
+          --effect-anim: liquid-sheen 6s ease-in-out infinite;
+          --ring-display: none;
+          --icon-anim: none;
+          
+        {% elif status == 'open' %}
+          /* OPEN: Red */
+          --main-color: var(--rgb-red);
+          --effect-anim: soft-heartbeat 3s ease-in-out infinite;
+          --ring-display: block;
+          /* NEW: Icon breathes when open */
+          --icon-anim: icon-alert-pulse 3s ease-in-out infinite;
+
+        {% else %}
+          /* MOVING: Orange */
+          --main-color: var(--rgb-orange);
+          --effect-anim: smooth-flow 2s linear infinite;
+          --ring-display: none;
+          /* Icon moves up/down */
+          --icon-anim: nudge-icon 1s ease-in-out infinite;
+        {% endif %}
+
+        /* --- BASE STYLING --- */
+        background-color: rgba(var(--main-color), 0.20) !important;
+        
+        --icon-color: var(--main-color) !important;
+        --icon-color-disabled: var(--main-color) !important;
+        --shape-color: transparent !important;
+        color: rgb(var(--main-color)) !important;
+
+        box-shadow: 0 0 20px rgba(var(--main-color), 0.2);
+        
+        border-radius: 16px !important;
+        position: relative;
+        overflow: visible !important;
+        transition: background-color 0.5s ease, box-shadow 0.5s ease;
+        
+        /* Apply the background shape animation */
+        animation: var(--effect-anim);
+      }
+
+
+      /* --- INNER EFFECT (Sheen / Stripes) --- */
+
+      .shape::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.2) 50%, transparent 80%);
+        background-size: 200% 100%;
+        opacity: 0; 
+        animation: inherit; 
+      }
+
+
+      /* --- OUTER EFFECT (Soft Ripple for Open) --- */
+
+      .shape::after {
+        content: '';
+        display: var(--ring-display);
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: rgba(var(--main-color), 0.8);
+        z-index: -1;
+        animation: soft-ripple 1s infinite ease-out;
+      }
+
+
+      /* --- ANIMATIONS --- */
+
+
+      /* CLOSED: Liquid Sheen */
+
+      @keyframes liquid-sheen {
+        0%, 100% { background-position: 150% 0; box-shadow: 0 0 15px rgba(var(--main-color), 0.1); opacity: 1; }
+        50% { background-position: -50% 0; box-shadow: 0 0 25px rgba(var(--main-color), 0.3); opacity: 1; }
+      }
+
+      .shape[style*="liquid-sheen"]::before { opacity: 1; animation:
+      liquid-sheen 6s ease-in-out infinite; }
+
+
+      /* OPEN: Background Heartbeat */
+
+      @keyframes soft-heartbeat {
+        0% { transform: scale(1); box-shadow: 0 0 10px rgba(var(--main-color), 0.2); }
+        50% { transform: scale(1.03); box-shadow: 0 0 25px rgba(var(--main-color), 0.5); }
+        100% { transform: scale(1); box-shadow: 0 0 10px rgba(var(--main-color), 0.2); }
+      }
+
+
+      /* OPEN: Icon Alert Pulse (The Icon itself scales) */
+
+      @keyframes icon-alert-pulse {
+        0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(var(--main-color), 0)); }
+        50% { transform: scale(1.2); filter: drop-shadow(0 0 8px rgba(var(--main-color), 0.6)); }
+        100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(var(--main-color), 0)); }
+      }
+
+
+      /* OPEN: Fading Ripple */
+
+      @keyframes soft-ripple {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(1.8); opacity: 0; }
+      }
+
+
+      /* MOVING: Smooth Flow Background */
+
+      @keyframes smooth-flow {
+        0% { background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); background-position: 0 0; opacity: 1; }
+        100% { background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); background-position: 28px 0; opacity: 1; }
+      }
+
+
+      /* MOVING: Gentle Icon Nudge */
+
+      @keyframes nudge-icon {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -18px 0 10px -15px !important;
+        padding-right: 10px;
+        z-index: 1;
+        
+        /* APPLY ICON ANIMATION HERE */
+        animation: var(--icon-anim);
+        transform-origin: center;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>46 - Living room temp (C)</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_temperature
+tap_action:
+  action: more-info
+icon: mdi:thermometer
+name: Living room temp (C)
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG ========== #}
+        {% set temp = states('sensor.livingroom_temperature') | float(0) %}
+
+        {# ------------------------------------------- #}
+        {# TEMPERATURE → COLOR + EFFECT PRESETS        #}
+        {# ------------------------------------------- #}
+
+        {# DEFAULTS (will be overridden by ranges) #}
+        {% set rgb = '0,140,255' %}
+        {% set anim = 'temp-cold-breathe' %}
+        {% set glow_anim = 'temp-cold-glow' %}
+        {% set halo_anim = 'temp-cold-halo' %}
+        {% set duration = 4.0 %}
+        {% set intensity = 0.5 %}
+
+        {# RANGES / COLORS #}
+        {# You can change temp numbers below if needed #}
+
+        {% if temp < 16 %}
+          {# BLUE #}
+          {% set rgb = '0,140,255' %}
+          {% set anim = 'temp-cold-breathe' %}
+          {% set glow_anim = 'temp-cold-glow' %}
+          {% set halo_anim = 'temp-cold-halo' %}
+          {% set duration = 4.4 %}
+          {% set intensity = 0.4 %}
+
+        {% elif temp < 18 %}
+          {# YELLOW #}
+          {% set rgb = '255,210,40' %}
+          {% set anim = 'temp-cool-wave' %}
+          {% set glow_anim = 'temp-cool-glow' %}
+          {% set halo_anim = 'temp-cool-halo' %}
+          {% set duration = 3.4 %}
+          {% set intensity = 0.55 %}
+
+        {% elif temp < 20 %}
+          {# ORANGE #}
+          {% set rgb = '255,150,40' %}
+          {% set anim = 'temp-comfy-breathe' %}
+          {% set glow_anim = 'temp-comfy-glow' %}
+          {% set halo_anim = 'temp-comfy-halo' %}
+          {% set duration = 3.0 %}
+          {% set intensity = 0.6 %}
+
+        {% elif temp < 22 %}
+          {# DARK ORANGE #}
+          {% set rgb = '255,115,20' %}
+          {% set anim = 'temp-warm-pulse' %}
+          {% set glow_anim = 'temp-warm-glow' %}
+          {% set halo_anim = 'temp-warm-halo' %}
+          {% set duration = 2.4 %}
+          {% set intensity = 0.8 %}
+
+        {% else %}
+          {# RED #}
+          {% set rgb = '255,40,40' %}
+          {% set anim = 'temp-hot-shimmer' %}
+          {% set glow_anim = 'temp-hot-glow' %}
+          {% set halo_anim = 'temp-hot-halo' %}
+          {% set duration = 2.0 %}
+          {% set intensity = 1.0 %}
+        {% endif %}
+
+        {# Apply variables #}
+        --temp-rgb: {{ rgb }};
+        --temp-intensity: {{ intensity }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --temp-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --temp-halo-animation: {{ halo_anim }} {{ (duration * 1.15) | round(2) }}s ease-in-out infinite;
+
+        opacity: 1;
+
+        /* Icon color follows the temperature */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* 🔧 KILL THE THEME BLUE & MAKE SHAPE NEUTRAL */
+        background-color: rgba(77, 77, 77,0.1) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* Glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--temp-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--temp-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== COLD ========== */
+      @keyframes temp-cold-breathe {
+        0%   { transform: scale(0.96); }
+        50%  { transform: scale(1.03); }
+        100% { transform: scale(0.96); }
+      }
+
+      @keyframes temp-cold-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 6 rgba(var(--temp-rgb), 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--temp-rgb), 0.95),
+            0 0 50px 10px rgba(var(--temp-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 6 rgba(var(--temp-rgb), 0.55);
+        }
+      }
+
+      @keyframes temp-cold-halo {
+        0% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--temp-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 130px 36px rgba(var(--temp-rgb), 0.5),
+            0 -34px 100px -8px rgba(240, 250, 255, 0.8);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--temp-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+      }
+
+      /* ========== COOL ========== */
+      @keyframes temp-cool-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes temp-cool-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 4 rgba(var(--temp-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 28px 2 rgba(var(--temp-rgb), 0.95),
+            0 0 48px 12px rgba(var(--temp-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 4 rgba(var(--temp-rgb), 0.7);
+        }
+      }
+
+      @keyframes temp-cool-halo {
+        0% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--temp-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 140px 42px rgba(var(--temp-rgb), 0.45),
+            0 30px 110px -10px rgba(0, 255, 255, 0.5);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--temp-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+      }
+
+      /* ========== COMFY ========== */
+      @keyframes temp-comfy-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.05); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes temp-comfy-glow {
+        50% {
+          box-shadow:
+            0 0 26px 4 rgba(var(--temp-rgb), 0.9),
+            0 0 42px 10px rgba(var(--temp-rgb), 0.85);
+        }
+      }
+
+      @keyframes temp-comfy-halo {
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--temp-rgb), 0.45),
+            0 26px 80px -10px rgba(180,255,200,0.5);
+        }
+      }
+
+      /* ========== WARM ========== */
+      @keyframes temp-warm-pulse {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes temp-warm-glow {
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--temp-rgb), 0.95),
+            0 0 54px 14px rgba(var(--temp-rgb), 0.9);
+        }
+      }
+
+      @keyframes temp-warm-halo {
+        50% {
+          box-shadow:
+            0 0 140px 48px rgba(var(--temp-rgb), 0.55),
+            0 26px 100px -10px rgba(255,210,150,0.5);
+        }
+      }
+
+      /* ========== HOT ========== */
+      @keyframes temp-hot-shimmer {
+        0%   { transform: scale(1); filter: blur(0); }
+        50%  { transform: scale(1.08); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes temp-hot-glow {
+        50% {
+          box-shadow:
+            0 0 34px 6 rgba(var(--temp-rgb), 1),
+            0 0 62px 14px rgba(var(--temp-rgb), 0.95);
+        }
+      }
+
+      @keyframes temp-hot-halo {
+        50% {
+          box-shadow:
+            0 0 160px 60px rgba(var(--temp-rgb), 0.6),
+            0 34px 120px -12px rgba(255,150,100,0.6);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>47 - Living room temp (F)</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_temperature_fah
+tap_action:
+  action: more-info
+icon: mdi:thermometer
+name: Living room temp (F)
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG (FAHRENHEIT) ========== #}
+        {% set temp = states('sensor.livingroom_temperature_fah') | float(0) %}
+
+        {# DEFAULTS (overridden by ranges) #}
+        {% set rgb = '0,140,255' %}
+        {% set anim = 'temp-cold-breathe' %}
+        {% set glow_anim = 'temp-cold-glow' %}
+        {% set halo_anim = 'temp-cold-halo' %}
+        {% set duration = 4.0 %}
+        {% set intensity = 0.5 %}
+
+        {# RANGES / COLORS #}
+        {# You can change temp numbers below if needed #}
+
+        {% if temp < 64 %}
+          {# BLUE - COLD #}
+          {% set rgb = '0,140,255' %}
+          {% set anim = 'temp-cold-breathe' %}
+          {% set glow_anim = 'temp-cold-glow' %}
+          {% set halo_anim = 'temp-cold-halo' %}
+          {% set duration = 4.4 %}
+          {% set intensity = 0.4 %}
+
+        {% elif temp < 68 %}
+          {# YELLOW - COOL #}
+          {% set rgb = '255,210,40' %}
+          {% set anim = 'temp-cool-wave' %}
+          {% set glow_anim = 'temp-cool-glow' %}
+          {% set halo_anim = 'temp-cool-halo' %}
+          {% set duration = 3.4 %}
+          {% set intensity = 0.55 %}
+
+        {% elif temp < 72 %}
+          {# ORANGE - COMFY #}
+          {% set rgb = '255,150,40' %}
+          {% set anim = 'temp-comfy-breathe' %}
+          {% set glow_anim = 'temp-comfy-glow' %}
+          {% set halo_anim = 'temp-comfy-halo' %}
+          {% set duration = 3.0 %}
+          {% set intensity = 0.6 %}
+
+        {% elif temp < 76 %}
+          {# DARK ORANGE - WARM #}
+          {% set rgb = '255,115,20' %}
+          {% set anim = 'temp-warm-pulse' %}
+          {% set glow_anim = 'temp-warm-glow' %}
+          {% set halo_anim = 'temp-warm-halo' %}
+          {% set duration = 2.4 %}
+          {% set intensity = 0.8 %}
+
+        {% else %}
+          {# RED - HOT #}
+          {% set rgb = '255,40,40' %}
+          {% set anim = 'temp-hot-shimmer' %}
+          {% set glow_anim = 'temp-hot-glow' %}
+          {% set halo_anim = 'temp-hot-halo' %}
+          {% set duration = 2.0 %}
+          {% set intensity = 1.0 %}
+        {% endif %}
+
+        {# Apply variables #}
+        --temp-rgb: {{ rgb }};
+        --temp-intensity: {{ intensity }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --temp-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --temp-halo-animation: {{ halo_anim }} {{ (duration * 1.15) | round(2) }}s ease-in-out infinite;
+
+        opacity: 1;
+
+        /* Icon color follows the temperature */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* Neutral pill, no theme blue */
+        background-color: rgba(77,77,77,0.2) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* Glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--temp-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--temp-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== COLD (blue) ========== */
+      @keyframes temp-cold-breathe {
+        0%   { transform: scale(0.96); }
+        50%  { transform: scale(1.03); }
+        100% { transform: scale(0.96); }
+      }
+
+      @keyframes temp-cold-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 6 rgba(var(--temp-rgb), 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--temp-rgb), 0.95),
+            0 0 50px 10px rgba(var(--temp-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 6 rgba(var(--temp-rgb), 0.55);
+        }
+      }
+
+      @keyframes temp-cold-halo {
+        0% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--temp-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 130px 36px rgba(var(--temp-rgb), 0.5),
+            0 -34px 100px -8px rgba(240, 250, 255, 0.8);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--temp-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+      }
+
+      /* ========== COOL / YELLOW ========== */
+      @keyframes temp-cool-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes temp-cool-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 4 rgba(var(--temp-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 28px 2 rgba(var(--temp-rgb), 0.95),
+            0 0 48px 12px rgba(var(--temp-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--temp-rgb), 0.6),
+            0 0 34px 4 rgba(var(--temp-rgb), 0.7);
+        }
+      }
+
+      @keyframes temp-cool-halo {
+        0% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--temp-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 140px 42px rgba(var(--temp-rgb), 0.45),
+            0 30px 110px -10px rgba(0, 255, 255, 0.5);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--temp-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+      }
+
+      /* ========== COMFY / ORANGE ========== */
+      @keyframes temp-comfy-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.05); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes temp-comfy-glow {
+        50% {
+          box-shadow:
+            0 0 26px 4 rgba(var(--temp-rgb), 0.9),
+            0 0 42px 10px rgba(var(--temp-rgb), 0.85);
+        }
+      }
+
+      @keyframes temp-comfy-halo {
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--temp-rgb), 0.45),
+            0 26px 80px -10px rgba(180,255,200,0.5);
+        }
+      }
+
+      /* ========== WARM / DARK ORANGE ========== */
+      @keyframes temp-warm-pulse {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes temp-warm-glow {
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--temp-rgb), 0.95),
+            0 0 54px 14px rgba(var(--temp-rgb), 0.9);
+        }
+      }
+
+      @keyframes temp-warm-halo {
+        50% {
+          box-shadow:
+            0 0 140px 48px rgba(var(--temp-rgb), 0.55),
+            0 26px 100px -10px rgba(255,210,150,0.5);
+        }
+      }
+
+      /* ========== HOT / RED ========== */
+      @keyframes temp-hot-shimmer {
+        0%   { transform: scale(1); filter: blur(0); }
+        50%  { transform: scale(1.08); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes temp-hot-glow {
+        50% {
+          box-shadow:
+            0 0 34px 6 rgba(var(--temp-rgb), 1),
+            0 0 62px 14px rgba(var(--temp-rgb), 0.95);
+        }
+      }
+
+      @keyframes temp-hot-halo {
+        50% {
+          box-shadow:
+            0 0 160px 60px rgba(var(--temp-rgb), 0.6),
+            0 34px 120px -12px rgba(255,150,100,0.6);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>48 - Living room humidity</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_humidity
+tap_action:
+  action: more-info
+icon: mdi:water-percent
+name: Living room humidity
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG ========== #}
+        {% set hum = states('sensor.livingroom_humidity') | float(0) %}
+
+        {# DEFAULTS #}
+        {% set rgb = '120,210,255' %}
+        {% set anim = 'hum-good-breathe' %}
+        {% set glow_anim = 'hum-good-glow' %}
+        {% set halo_anim = 'hum-good-halo' %}
+        {% set duration = 3.2 %}
+
+        {# RANGES / COLORS #}
+        {# You can change number below if needed #}
+
+        {% if hum < 40 %}
+          {# BAD - dry - dark blue #}
+          {% set rgb = '0,80,200' %}
+          {% set anim = 'hum-bad-pulse' %}
+          {% set glow_anim = 'hum-bad-glow' %}
+          {% set halo_anim = 'hum-bad-halo' %}
+          {% set duration = 2.8 %}
+        {% elif hum <= 60 %}
+          {# GOOD - light blue #}
+          {% set rgb = '120,210,255' %}
+          {% set anim = 'hum-good-breathe' %}
+          {% set glow_anim = 'hum-good-glow' %}
+          {% set halo_anim = 'hum-good-halo' %}
+          {% set duration = 3.4 %}
+        {% else %}
+          {# MIDDLE / humid - medium blue #}
+          {% set rgb = '40,140,255' %}
+          {% set anim = 'hum-mid-wave' %}
+          {% set glow_anim = 'hum-mid-glow' %}
+          {% set halo_anim = 'hum-mid-halo' %}
+          {% set duration = 3.0 %}
+        {% endif %}
+
+        --hum-rgb: {{ rgb }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --hum-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --hum-halo-animation: {{ halo_anim }} {{ (duration * 1.1) | round(2) }}s ease-in-out infinite;
+
+        /* Icon color follows humidity color */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* Neutral pill so theme blue does not leak through */
+        background-color: rgba(77,77,77,0.2) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        opacity: 1;
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* Glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--hum-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--hum-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== GOOD - light blue ========== */
+      @keyframes hum-good-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.04); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes hum-good-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--hum-rgb), 0.55),
+            0 0 30px 4 rgba(var(--hum-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 4 rgba(var(--hum-rgb), 0.9),
+            0 0 44px 10px rgba(var(--hum-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--hum-rgb), 0.55),
+            0 0 30px 4 rgba(var(--hum-rgb), 0.6);
+        }
+      }
+
+      @keyframes hum-good-halo {
+        0% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--hum-rgb), 0.35),
+            0 18px 70px -12px rgba(180,230,255,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--hum-rgb), 0.45),
+            0 26px 90px -10px rgba(200,240,255,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--hum-rgb), 0.35),
+            0 18px 70px -12px rgba(180,230,255,0.3);
+        }
+      }
+
+      /* ========== MIDDLE / humid - medium blue ========== */
+      @keyframes hum-mid-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes hum-mid-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--hum-rgb), 0.6),
+            0 0 32px 4 rgba(var(--hum-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 28px 3 rgba(var(--hum-rgb), 0.95),
+            0 0 48px 10px rgba(var(--hum-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--hum-rgb), 0.6),
+            0 0 32px 4 rgba(var(--hum-rgb), 0.7);
+        }
+      }
+
+      @keyframes hum-mid-halo {
+        0% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--hum-rgb), 0.4),
+            0 18px 80px -12px rgba(80,190,255,0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 135px 42px rgba(var(--hum-rgb), 0.5),
+            0 28px 105px -10px rgba(100,210,255,0.5);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--hum-rgb), 0.4),
+            0 18px 80px -12px rgba(80,190,255,0.35);
+        }
+      }
+
+      /* ========== BAD - dry - dark blue ========== */
+      @keyframes hum-bad-pulse {
+        0%   { transform: scale(0.97); }
+        40%  { transform: scale(1.03); }
+        100% { transform: scale(0.97); }
+      }
+
+      @keyframes hum-bad-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--hum-rgb), 0.6),
+            0 0 28px 4 rgba(var(--hum-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 26px 4 rgba(var(--hum-rgb), 0.95),
+            0 0 44px 12px rgba(var(--hum-rgb), 0.9);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--hum-rgb), 0.6),
+            0 0 28px 4 rgba(var(--hum-rgb), 0.7);
+        }
+      }
+
+      @keyframes hum-bad-halo {
+        0% {
+          box-shadow:
+            0 0 80px 22px rgba(var(--hum-rgb), 0.45),
+            0 18px 75px -10px rgba(0,70,160,0.5);
+        }
+        50% {
+          box-shadow:
+            0 0 130px 40px rgba(var(--hum-rgb), 0.6),
+            0 26px 100px -8px rgba(0,90,190,0.65);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 22px rgba(var(--hum-rgb), 0.45),
+            0 18px 75px -10px rgba(0,70,160,0.5);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>49 - Air quality Home</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: air_quality.air_quality_home
+tap_action:
+  action: more-info
+icon: mdi:air-filter
+name: Air quality Home
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG (EUROPEAN AQI STYLE, PM2.5) ========== #}
+        {% set aqi = states('air_quality.air_quality_home') | float(0) %}
+
+        {# DEFAULTS (overridden by ranges) #}
+        {% set rgb = '40,190,100' %}
+        {% set anim = 'aq-good-breathe' %}
+        {% set glow_anim = 'aq-good-glow' %}
+        {% set halo_anim = 'aq-good-halo' %}
+        {% set duration = 3.2 %}
+
+        {# EAQI PM2.5 BANDS (µg/m3, 1 hour)
+           0   - 5    -> Good (dark green)
+           6   - 15   -> Fair (light green)
+           16  - 50   -> Moderate (yellow)
+           51  - 90   -> Poor (orange)
+           91  - 140  -> Very poor (red)
+           > 140      -> Extremely poor (dark maroon)
+        #}
+
+        {# RANGES / COLORS #}
+        {# You can change aqi number below if needed #}
+
+
+        {% if aqi <= 5 %}
+          {# GOOD #}
+          {% set rgb = '40,190,100' %}
+          {% set anim = 'aq-good-breathe' %}
+          {% set glow_anim = 'aq-good-glow' %}
+          {% set halo_anim = 'aq-good-halo' %}
+          {% set duration = 3.4 %}
+
+        {% elif aqi <= 15 %}
+          {# FAIR #}
+          {% set rgb = '140,220,140' %}
+          {% set anim = 'aq-fair-wave' %}
+          {% set glow_anim = 'aq-fair-glow' %}
+          {% set halo_anim = 'aq-fair-halo' %}
+          {% set duration = 3.2 %}
+
+        {% elif aqi <= 50 %}
+          {# MODERATE #}
+          {% set rgb = '255,215,70' %}
+          {% set anim = 'aq-moderate-wave' %}
+          {% set glow_anim = 'aq-moderate-glow' %}
+          {% set halo_anim = 'aq-moderate-halo' %}
+          {% set duration = 3.0 %}
+
+        {% elif aqi <= 90 %}
+          {# POOR #}
+          {% set rgb = '255,170,60' %}
+          {% set anim = 'aq-poor-pulse' %}
+          {% set glow_anim = 'aq-poor-glow' %}
+          {% set halo_anim = 'aq-poor-halo' %}
+          {% set duration = 2.8 %}
+
+        {% elif aqi <= 140 %}
+          {# VERY POOR #}
+          {% set rgb = '230,60,60' %}
+          {% set anim = 'aq-verypoor-throb' %}
+          {% set glow_anim = 'aq-verypoor-glow' %}
+          {% set halo_anim = 'aq-verypoor-halo' %}
+          {% set duration = 2.4 %}
+
+        {% else %}
+          {# EXTREMELY POOR #}
+          {% set rgb = '120,0,70' %}
+          {% set anim = 'aq-extreme-smog' %}
+          {% set glow_anim = 'aq-extreme-glow' %}
+          {% set halo_anim = 'aq-extreme-halo' %}
+          {% set duration = 2.0 %}
+        {% endif %}
+
+        --aq-rgb: {{ rgb }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --aq-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --aq-halo-animation: {{ halo_anim }} {{ (duration * 1.1) | round(2) }}s ease-in-out infinite;
+
+        /* icon color follows AQ color */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* neutral pill so theme color does not bleed */
+        background-color: rgba(77,77,77,0.12) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        opacity: 1;
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--aq-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--aq-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== GOOD (green) ========== */
+      @keyframes aq-good-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.04); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes aq-good-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 4 rgba(var(--aq-rgb), 0.9),
+            0 0 40px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+      }
+
+      @keyframes aq-good-halo {
+        0% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.45),
+            0 26px 90px -10px rgba(200,255,220,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+      }
+
+      /* ========== FAIR (light green) ========== */
+      @keyframes aq-fair-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes aq-fair-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 3 rgba(var(--aq-rgb), 0.9),
+            0 0 40px 9px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+      }
+
+      @keyframes aq-fair-halo {
+        0% {
+          box-shadow:
+            0 0 85px 26px rgba(var(--aq-rgb), 0.35),
+            0 18px 75px -12px rgba(200,255,210,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 125px 42px rgba(var(--aq-rgb), 0.45),
+            0 26px 95px -10px rgba(215,255,225,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 85px 26px rgba(var(--aq-rgb), 0.35),
+            0 18px 75px -12px rgba(200,255,210,0.3);
+        }
+      }
+
+      /* ========== MODERATE (yellow) ========== */
+      @keyframes aq-moderate-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes aq-moderate-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 26px 3 rgba(var(--aq-rgb), 0.95),
+            0 0 44px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+      }
+
+      @keyframes aq-moderate-halo {
+        0% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 135px 44px rgba(var(--aq-rgb), 0.5),
+            0 30px 105px -8px rgba(255,250,190,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+      }
+
+      /* ========== POOR (orange) ========== */
+      @keyframes aq-poor-pulse {
+        0%   { transform: scale(0.99); }
+        50%  { transform: scale(1.06); }
+        100% { transform: scale(0.99); }
+      }
+
+      @keyframes aq-poor-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--aq-rgb), 1),
+            0 0 50px 12px rgba(var(--aq-rgb), 0.9);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+      }
+
+      @keyframes aq-poor-halo {
+        0% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+        50% {
+          box-shadow:
+            0 0 145px 50px rgba(var(--aq-rgb), 0.6),
+            0 32px 115px -8px rgba(255,220,170,0.55);
+        }
+        100% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+      }
+
+      /* ========== VERY POOR (red) ========== */
+      @keyframes aq-verypoor-throb {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes aq-verypoor-glow {
+        0% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+        50% {
+          box-shadow:
+            0 0 34px 4 rgba(var(--aq-rgb), 1),
+            0 0 60px 14px rgba(var(--aq-rgb), 0.95);
+        }
+        100% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+      }
+
+      @keyframes aq-verypoor-halo {
+        0% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 170px 64px rgba(var(--aq-rgb), 0.7),
+            0 40px 140px -8px rgba(180,80,80,0.7);
+        }
+        100% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+      }
+
+      /* ========== EXTREMELY POOR (dark maroon) ========== */
+      @keyframes aq-extreme-smog {
+        0%   { transform: scale(1); filter: blur(0); }
+        35%  { transform: scale(1.1) translateY(-1px); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes aq-extreme-glow {
+        0% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+        50% {
+          box-shadow:
+            0 0 38px 6 rgba(var(--aq-rgb), 1),
+            0 0 70px 18px rgba(var(--aq-rgb), 0.98);
+        }
+        100% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+      }
+
+      @keyframes aq-extreme-halo {
+        0% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 230px 90px rgba(var(--aq-rgb), 0.85),
+            0 52px 180px -8px rgba(90,0,45,0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>50 - Air quality Amsterdam</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_air_quality_eu
+tap_action:
+  action: more-info
+icon: mdi:air-filter
+name: Air quality Amsterdam
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG (EUROPEAN AQI STYLE, PM2.5) ========== #}
+        {% set aqi = states('sensor.livingroom_air_quality_eu') | float(0) %}
+
+        {# DEFAULTS (overridden by ranges) #}
+        {% set rgb = '40,190,100' %}
+        {% set anim = 'aq-good-breathe' %}
+        {% set glow_anim = 'aq-good-glow' %}
+        {% set halo_anim = 'aq-good-halo' %}
+        {% set duration = 3.2 %}
+
+        {# EAQI PM2.5 BANDS (µg/m3, 1 hour)
+           0   - 5    -> Good (dark green)
+           6   - 15   -> Fair (light green)
+           16  - 50   -> Moderate (yellow)
+           51  - 90   -> Poor (orange)
+           91  - 140  -> Very poor (red)
+           > 140      -> Extremely poor (dark maroon)
+        #}
+
+        {# RANGES / COLORS #}
+        {# You can change aqi number below if needed #}
+
+        {% if aqi <= 5 %}
+          {# GOOD #}
+          {% set rgb = '40,190,100' %}
+          {% set anim = 'aq-good-breathe' %}
+          {% set glow_anim = 'aq-good-glow' %}
+          {% set halo_anim = 'aq-good-halo' %}
+          {% set duration = 3.4 %}
+
+        {% elif aqi <= 15 %}
+          {# FAIR #}
+          {% set rgb = '140,220,140' %}
+          {% set anim = 'aq-fair-wave' %}
+          {% set glow_anim = 'aq-fair-glow' %}
+          {% set halo_anim = 'aq-fair-halo' %}
+          {% set duration = 3.2 %}
+
+        {% elif aqi <= 50 %}
+          {# MODERATE #}
+          {% set rgb = '255,215,70' %}
+          {% set anim = 'aq-moderate-wave' %}
+          {% set glow_anim = 'aq-moderate-glow' %}
+          {% set halo_anim = 'aq-moderate-halo' %}
+          {% set duration = 3.0 %}
+
+        {% elif aqi <= 90 %}
+          {# POOR #}
+          {% set rgb = '255,170,60' %}
+          {% set anim = 'aq-poor-pulse' %}
+          {% set glow_anim = 'aq-poor-glow' %}
+          {% set halo_anim = 'aq-poor-halo' %}
+          {% set duration = 2.8 %}
+
+        {% elif aqi <= 140 %}
+          {# VERY POOR #}
+          {% set rgb = '230,60,60' %}
+          {% set anim = 'aq-verypoor-throb' %}
+          {% set glow_anim = 'aq-verypoor-glow' %}
+          {% set halo_anim = 'aq-verypoor-halo' %}
+          {% set duration = 2.4 %}
+
+        {% else %}
+          {# EXTREMELY POOR #}
+          {% set rgb = '120,0,70' %}
+          {% set anim = 'aq-extreme-smog' %}
+          {% set glow_anim = 'aq-extreme-glow' %}
+          {% set halo_anim = 'aq-extreme-halo' %}
+          {% set duration = 2.0 %}
+        {% endif %}
+
+        --aq-rgb: {{ rgb }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --aq-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --aq-halo-animation: {{ halo_anim }} {{ (duration * 1.1) | round(2) }}s ease-in-out infinite;
+
+        /* icon color follows AQ color */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* neutral pill so theme color does not bleed */
+        background-color: rgba(77,77,77,0.12) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        opacity: 1;
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--aq-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--aq-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== GOOD (green) ========== */
+      @keyframes aq-good-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.04); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes aq-good-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 4 rgba(var(--aq-rgb), 0.9),
+            0 0 40px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+      }
+
+      @keyframes aq-good-halo {
+        0% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.45),
+            0 26px 90px -10px rgba(200,255,220,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+      }
+
+      /* ========== FAIR (light green) ========== */
+      @keyframes aq-fair-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes aq-fair-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 3 rgba(var(--aq-rgb), 0.9),
+            0 0 40px 9px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+      }
+
+      @keyframes aq-fair-halo {
+        0% {
+          box-shadow:
+            0 0 85px 26px rgba(var(--aq-rgb), 0.35),
+            0 18px 75px -12px rgba(200,255,210,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 125px 42px rgba(var(--aq-rgb), 0.45),
+            0 26px 95px -10px rgba(215,255,225,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 85px 26px rgba(var(--aq-rgb), 0.35),
+            0 18px 75px -12px rgba(200,255,210,0.3);
+        }
+      }
+
+      /* ========== MODERATE (yellow) ========== */
+      @keyframes aq-moderate-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes aq-moderate-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 26px 3 rgba(var(--aq-rgb), 0.95),
+            0 0 44px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+      }
+
+      @keyframes aq-moderate-halo {
+        0% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 135px 44px rgba(var(--aq-rgb), 0.5),
+            0 30px 105px -8px rgba(255,250,190,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+      }
+
+      /* ========== POOR (orange) ========== */
+      @keyframes aq-poor-pulse {
+        0%   { transform: scale(0.99); }
+        50%  { transform: scale(1.06); }
+        100% { transform: scale(0.99); }
+      }
+
+      @keyframes aq-poor-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--aq-rgb), 1),
+            0 0 50px 12px rgba(var(--aq-rgb), 0.9);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+      }
+
+      @keyframes aq-poor-halo {
+        0% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+        50% {
+          box-shadow:
+            0 0 145px 50px rgba(var(--aq-rgb), 0.6),
+            0 32px 115px -8px rgba(255,220,170,0.55);
+        }
+        100% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+      }
+
+      /* ========== VERY POOR (red) ========== */
+      @keyframes aq-verypoor-throb {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes aq-verypoor-glow {
+        0% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+        50% {
+          box-shadow:
+            0 0 34px 4 rgba(var(--aq-rgb), 1),
+            0 0 60px 14px rgba(var(--aq-rgb), 0.95);
+        }
+        100% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+      }
+
+      @keyframes aq-verypoor-halo {
+        0% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 170px 64px rgba(var(--aq-rgb), 0.7),
+            0 40px 140px -8px rgba(180,80,80,0.7);
+        }
+        100% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+      }
+
+      /* ========== EXTREMELY POOR (dark maroon) ========== */
+      @keyframes aq-extreme-smog {
+        0%   { transform: scale(1); filter: blur(0); }
+        35%  { transform: scale(1.1) translateY(-1px); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes aq-extreme-glow {
+        0% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+        50% {
+          box-shadow:
+            0 0 38px 6 rgba(var(--aq-rgb), 1),
+            0 0 70px 18px rgba(var(--aq-rgb), 0.98);
+        }
+        100% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+      }
+
+      @keyframes aq-extreme-halo {
+        0% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 230px 90px rgba(var(--aq-rgb), 0.85),
+            0 52px 180px -8px rgba(90,0,45,0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>51 - Air quality (US)</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_air_quality
+tap_action:
+  action: more-info
+icon: mdi:air-filter
+name: Air quality (US)
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG ========== #}
+        {% set aqi = states('sensor.livingroom_air_quality') | float(0) %}
+
+        {# DEFAULTS (overridden by ranges) #}
+        {% set rgb = '40,190,100' %}
+        {% set anim = 'aq-good-breathe' %}
+        {% set glow_anim = 'aq-good-glow' %}
+        {% set halo_anim = 'aq-good-halo' %}
+        {% set duration = 3.2 %}
+
+        {# STANDARD AQI RANGES
+           0   - 50   -> Good (green)
+           51  - 100  -> Moderate (yellow)
+           101 - 150  -> Unhealthy for sensitive groups (orange)
+           151 - 200  -> Unhealthy (red)
+           201 - 300  -> Very unhealthy (purple)
+           301+       -> Hazardous (dark maroon)
+        #}
+
+        {# RANGES / COLORS #}
+        {# You can change aqi number below if needed #}
+
+        {% if aqi <= 50 %}
+          {# GOOD #}
+          {% set rgb = '40,190,100' %}
+          {% set anim = 'aq-good-breathe' %}
+          {% set glow_anim = 'aq-good-glow' %}
+          {% set halo_anim = 'aq-good-halo' %}
+          {% set duration = 3.4 %}
+
+        {% elif aqi <= 100 %}
+          {# MODERATE #}
+          {% set rgb = '255,215,70' %}
+          {% set anim = 'aq-moderate-wave' %}
+          {% set glow_anim = 'aq-moderate-glow' %}
+          {% set halo_anim = 'aq-moderate-halo' %}
+          {% set duration = 3.0 %}
+
+        {% elif aqi <= 150 %}
+          {# UNHEALTHY FOR SENSITIVE GROUPS #}
+          {% set rgb = '255,170,60' %}
+          {% set anim = 'aq-usg-pulse' %}
+          {% set glow_anim = 'aq-usg-glow' %}
+          {% set halo_anim = 'aq-usg-halo' %}
+          {% set duration = 2.8 %}
+
+        {% elif aqi <= 200 %}
+          {# UNHEALTHY #}
+          {% set rgb = '230,60,60' %}
+          {% set anim = 'aq-unhealthy-throb' %}
+          {% set glow_anim = 'aq-unhealthy-glow' %}
+          {% set halo_anim = 'aq-unhealthy-halo' %}
+          {% set duration = 2.4 %}
+
+        {% elif aqi <= 300 %}
+          {# VERY UNHEALTHY #}
+          {% set rgb = '170,60,180' %}
+          {% set anim = 'aq-veryunhealthy-smog' %}
+          {% set glow_anim = 'aq-veryunhealthy-glow' %}
+          {% set halo_anim = 'aq-veryunhealthy-halo' %}
+          {% set duration = 2.2 %}
+
+        {% else %}
+          {# HAZARDOUS #}
+          {% set rgb = '120,0,70' %}
+          {% set anim = 'aq-hazard-smog' %}
+          {% set glow_anim = 'aq-hazard-glow' %}
+          {% set halo_anim = 'aq-hazard-halo' %}
+          {% set duration = 2.0 %}
+        {% endif %}
+
+        --aq-rgb: {{ rgb }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --aq-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --aq-halo-animation: {{ halo_anim }} {{ (duration * 1.1) | round(2) }}s ease-in-out infinite;
+
+        /* icon color follows AQ color */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* neutral pill so theme color does not bleed */
+        background-color: rgba(77,77,77,0.12) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255,255,255,0.06);
+
+        opacity: 1;
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--aq-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--aq-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== GOOD (green) ========== */
+      @keyframes aq-good-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.04); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes aq-good-glow {
+        0% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 24px 4 rgba(var(--aq-rgb), 0.9),
+            0 0 40px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 18px 0 rgba(var(--aq-rgb), 0.55),
+            0 0 30px 4 rgba(var(--aq-rgb), 0.6);
+        }
+      }
+
+      @keyframes aq-good-halo {
+        0% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.45),
+            0 26px 90px -10px rgba(200,255,220,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 24px rgba(var(--aq-rgb), 0.35),
+            0 18px 70px -12px rgba(180,255,210,0.3);
+        }
+      }
+
+      /* ========== MODERATE (yellow) ========== */
+      @keyframes aq-moderate-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes aq-moderate-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 26px 3 rgba(var(--aq-rgb), 0.95),
+            0 0 44px 10px rgba(var(--aq-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--aq-rgb), 0.6),
+            0 0 32px 4 rgba(var(--aq-rgb), 0.7);
+        }
+      }
+
+      @keyframes aq-moderate-halo {
+        0% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 135px 44px rgba(var(--aq-rgb), 0.5),
+            0 30px 105px -8px rgba(255,250,190,0.45);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 28px rgba(var(--aq-rgb), 0.4),
+            0 20px 80px -10px rgba(255,240,170,0.3);
+        }
+      }
+
+      /* ========== UNHEALTHY FOR SENSITIVE GROUPS (orange) ========== */
+      @keyframes aq-usg-pulse {
+        0%   { transform: scale(0.99); }
+        50%  { transform: scale(1.06); }
+        100% { transform: scale(0.99); }
+      }
+
+      @keyframes aq-usg-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--aq-rgb), 1),
+            0 0 50px 12px rgba(var(--aq-rgb), 0.9);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--aq-rgb), 0.65),
+            0 0 34px 4 rgba(var(--aq-rgb), 0.75);
+        }
+      }
+
+      @keyframes aq-usg-halo {
+        0% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+        50% {
+          box-shadow:
+            0 0 145px 50px rgba(var(--aq-rgb), 0.6),
+            0 32px 115px -8px rgba(255,220,170,0.55);
+        }
+        100% {
+          box-shadow:
+            0 0 100px 34px rgba(var(--aq-rgb), 0.5),
+            0 24px 90px -10px rgba(255,210,150,0.45);
+        }
+      }
+
+      /* ========== UNHEALTHY (red) ========== */
+      @keyframes aq-unhealthy-throb {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes aq-unhealthy-glow {
+        0% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+        50% {
+          box-shadow:
+            0 0 34px 4 rgba(var(--aq-rgb), 1),
+            0 0 60px 14px rgba(var(--aq-rgb), 0.95);
+        }
+        100% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.75),
+            0 0 38px 6 rgba(var(--aq-rgb), 0.8);
+        }
+      }
+
+      @keyframes aq-unhealthy-halo {
+        0% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 170px 64px rgba(var(--aq-rgb), 0.7),
+            0 40px 140px -8px rgba(180,80,80,0.7);
+        }
+        100% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--aq-rgb), 0.55),
+            0 30px 110px -10px rgba(150,60,60,0.55);
+        }
+      }
+
+      /* ========== VERY UNHEALTHY (purple) ========== */
+      @keyframes aq-veryunhealthy-smog {
+        0%   { transform: scale(1); filter: blur(0); }
+        40%  { transform: scale(1.08) translateY(-1px); filter: blur(0.4px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes aq-veryunhealthy-glow {
+        0% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.8),
+            0 0 40px 6 rgba(var(--aq-rgb), 0.85);
+        }
+        50% {
+          box-shadow:
+            0 0 34px 4 rgba(var(--aq-rgb), 1),
+            0 0 64px 14px rgba(var(--aq-rgb), 0.95);
+        }
+        100% {
+          box-shadow:
+            0 0 24px 0 rgba(var(--aq-rgb), 0.8),
+            0 0 40px 6 rgba(var(--aq-rgb), 0.85);
+        }
+      }
+
+      @keyframes aq-veryunhealthy-halo {
+        0% {
+          box-shadow:
+            0 0 140px 46px rgba(var(--aq-rgb), 0.6),
+            0 32px 120px -10px rgba(90,40,110,0.6);
+        }
+        50% {
+          box-shadow:
+            0 0 190px 72px rgba(var(--aq-rgb), 0.75),
+            0 42px 150px -8px rgba(120,60,140,0.75);
+        }
+        100% {
+          box-shadow:
+            0 0 140px 46px rgba(var(--aq-rgb), 0.6),
+            0 32px 120px -10px rgba(90,40,110,0.6);
+        }
+      }
+
+      /* ========== HAZARDOUS (dark maroon) ========== */
+      @keyframes aq-hazard-smog {
+        0%   { transform: scale(1); filter: blur(0); }
+        35%  { transform: scale(1.1) translateY(-1px); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes aq-hazard-glow {
+        0% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+        50% {
+          box-shadow:
+            0 0 38px 6 rgba(var(--aq-rgb), 1),
+            0 0 70px 18px rgba(var(--aq-rgb), 0.98);
+        }
+        100% {
+          box-shadow:
+            0 0 26px 0 rgba(var(--aq-rgb), 0.85),
+            0 0 44px 8 rgba(var(--aq-rgb), 0.9);
+        }
+      }
+
+      @keyframes aq-hazard-halo {
+        0% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 230px 90px rgba(var(--aq-rgb), 0.85),
+            0 52px 180px -8px rgba(90,0,45,0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 180px 60px rgba(var(--aq-rgb), 0.7),
+            0 40px 150px -10px rgba(60,0,30,0.7);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        --icon-color: rgba(var(--hum-rgb),1) !important;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>52 - Living room light (lux)</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: sensor.livingroom_illuminance
+tap_action:
+  action: more-info
+icon: mdi:brightness-5
+name: Living room light (lux)
+primary_info: state
+secondary_info: name
+card_mod:
+  style:
+    mushroom-shape-icon$: |
+      .shape {
+        {# ========== CONFIG ========== #}
+        {% set lux = states('sensor.livingroom_illuminance') | float(0) %}
+
+        {# ------------------------------------------- #}
+        {# LIGHT LEVEL → COLOR + EFFECT PRESETS        #}
+        {# ------------------------------------------- #}
+
+        {# DEFAULTS (will be overridden by ranges) #}
+        {% set rgb = '40,80,255' %}
+        {% set anim = 'lux-dark-breathe' %}
+        {% set glow_anim = 'lux-dark-glow' %}
+        {% set halo_anim = 'lux-dark-halo' %}
+        {% set duration = 4.0 %}
+        {% set intensity = 0.5 %}
+
+        {# YOUR RANGES / COLORS #####
+           < 10      -> deep blue (very dark)
+           10 - <50  -> purple (dim)
+           50 - <200 -> soft yellow (normal)
+           200 - <500 -> warm orange (bright)
+           >= 500    -> near white (very bright)
+        ########################## #}
+
+        {# RANGES / COLORS #}
+        {# You can change aqi number below if needed #}
+
+        {% if lux < 10 %}
+          {# DEEP BLUE - VERY DARK #}
+          {% set rgb = '40,80,255' %}
+          {% set anim = 'lux-dark-breathe' %}
+          {% set glow_anim = 'lux-dark-glow' %}
+          {% set halo_anim = 'lux-dark-halo' %}
+          {% set duration = 4.4 %}
+          {% set intensity = 0.4 %}
+
+        {% elif lux < 50 %}
+          {# PURPLE - DIM #}
+          {% set rgb = '140,80,220' %}
+          {% set anim = 'lux-dim-wave' %}
+          {% set glow_anim = 'lux-dim-glow' %}
+          {% set halo_anim = 'lux-dim-halo' %}
+          {% set duration = 3.6 %}
+          {% set intensity = 0.55 %}
+
+        {% elif lux < 200 %}
+          {# SOFT YELLOW - COMFY #}
+          {% set rgb = '255,210,80' %}
+          {% set anim = 'lux-comfy-breathe' %}
+          {% set glow_anim = 'lux-comfy-glow' %}
+          {% set halo_anim = 'lux-comfy-halo' %}
+          {% set duration = 3.0 %}
+          {% set intensity = 0.6 %}
+
+        {% elif lux < 500 %}
+          {# WARM ORANGE - BRIGHT #}
+          {% set rgb = '255,160,60' %}
+          {% set anim = 'lux-bright-pulse' %}
+          {% set glow_anim = 'lux-bright-glow' %}
+          {% set halo_anim = 'lux-bright-halo' %}
+          {% set duration = 2.6 %}
+          {% set intensity = 0.8 %}
+
+        {% else %}
+          {# NEAR WHITE - VERY BRIGHT #}
+          {% set rgb = '255,250,230' %}
+          {% set anim = 'lux-sun-shimmer' %}
+          {% set glow_anim = 'lux-sun-glow' %}
+          {% set halo_anim = 'lux-sun-halo' %}
+          {% set duration = 2.0 %}
+          {% set intensity = 1.0 %}
+        {% endif %}
+
+        {# Apply variables #}
+        --lux-rgb: {{ rgb }};
+        --lux-intensity: {{ intensity }};
+        --shape-animation: {{ anim }} {{ duration }}s ease-in-out infinite;
+        --lux-glow-animation: {{ glow_anim }} {{ (duration * 0.9) | round(2) }}s ease-in-out infinite;
+        --lux-halo-animation: {{ halo_anim }} {{ (duration * 1.15) | round(2) }}s ease-in-out infinite;
+
+        opacity: 1;
+
+        /* Icon color follows the light level */
+        --icon-color: rgba({{ rgb }}, 1);
+
+        /* Neutral base for the shape */
+        background-color: rgba(77, 77, 77, 0.1) !important;
+        box-shadow: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+
+        position: relative;
+        transform-origin: 50% 60%;
+        animation: var(--shape-animation);
+      }
+
+      /* Glow layers */
+      .shape::before,
+      .shape::after {
+        content: '';
+        position: absolute;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .shape::before {
+        inset: -8px;
+        animation: var(--lux-glow-animation);
+      }
+
+      .shape::after {
+        inset: -22px;
+        animation: var(--lux-halo-animation);
+        mix-blend-mode: screen;
+      }
+
+      /* ========== DARK ========== */
+      @keyframes lux-dark-breathe {
+        0%   { transform: scale(0.96); }
+        50%  { transform: scale(1.03); }
+        100% { transform: scale(0.96); }
+      }
+
+      @keyframes lux-dark-glow {
+        0% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--lux-rgb), 0.6),
+            0 0 34px 6 rgba(var(--lux-rgb), 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--lux-rgb), 0.95),
+            0 0 50px 10px rgba(var(--lux-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 20px 0 rgba(var(--lux-rgb), 0.6),
+            0 0 34px 6 rgba(var(--lux-rgb), 0.55);
+        }
+      }
+
+      @keyframes lux-dark-halo {
+        0% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--lux-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+        50% {
+          box-shadow:
+            0 0 130px 36px rgba(var(--lux-rgb), 0.5),
+            0 -34px 100px -8px rgba(240, 250, 255, 0.8);
+        }
+        100% {
+          box-shadow:
+            0 0 80px 20px rgba(var(--lux-rgb), 0.35),
+            0 -20px 80px -14px rgba(220, 240, 255, 0.55);
+        }
+      }
+
+      /* ========== DIM ========== */
+      @keyframes lux-dim-wave {
+        0%   { transform: translateX(0); }
+        25%  { transform: translateX(-1px); }
+        50%  { transform: translateX(1px) translateY(-1px); }
+        75%  { transform: translateX(-1px); }
+        100% { transform: translateX(0); }
+      }
+
+      @keyframes lux-dim-glow {
+        0% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--lux-rgb), 0.6),
+            0 0 34px 4 rgba(var(--lux-rgb), 0.7);
+        }
+        50% {
+          box-shadow:
+            0 0 28px 2 rgba(var(--lux-rgb), 0.95),
+            0 0 48px 12px rgba(var(--lux-rgb), 0.85);
+        }
+        100% {
+          box-shadow:
+            0 0 22px 0 rgba(var(--lux-rgb), 0.6),
+            0 0 34px 4 rgba(var(--lux-rgb), 0.7);
+        }
+      }
+
+      @keyframes lux-dim-halo {
+        0% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--lux-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+        50% {
+          box-shadow:
+            0 0 140px 42px rgba(var(--lux-rgb), 0.45),
+            0 30px 110px -10px rgba(0, 255, 255, 0.5);
+        }
+        100% {
+          box-shadow:
+            0 0 90px 26px rgba(var(--lux-rgb), 0.35),
+            0 18px 80px -12px rgba(0, 220, 255, 0.35);
+        }
+      }
+
+      /* ========== COMFY ========== */
+      @keyframes lux-comfy-breathe {
+        0%   { transform: scale(0.98); }
+        50%  { transform: scale(1.05); }
+        100% { transform: scale(0.98); }
+      }
+
+      @keyframes lux-comfy-glow {
+        50% {
+          box-shadow:
+            0 0 26px 4 rgba(var(--lux-rgb), 0.9),
+            0 0 42px 10px rgba(var(--lux-rgb), 0.85);
+        }
+      }
+
+      @keyframes lux-comfy-halo {
+        50% {
+          box-shadow:
+            0 0 120px 40px rgba(var(--lux-rgb), 0.45),
+            0 26px 80px -10px rgba(180, 255, 200, 0.5);
+        }
+      }
+
+      /* ========== BRIGHT ========== */
+      @keyframes lux-bright-pulse {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.07); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes lux-bright-glow {
+        50% {
+          box-shadow:
+            0 0 30px 4 rgba(var(--lux-rgb), 0.95),
+            0 0 54px 14px rgba(var(--lux-rgb), 0.9);
+        }
+      }
+
+      @keyframes lux-bright-halo {
+        50% {
+          box-shadow:
+            0 0 140px 48px rgba(var(--lux-rgb), 0.55),
+            0 26px 100px -10px rgba(255, 210, 150, 0.5);
+        }
+      }
+
+      /* ========== VERY BRIGHT / SUN ========== */
+      @keyframes lux-sun-shimmer {
+        0%   { transform: scale(1); filter: blur(0); }
+        50%  { transform: scale(1.08); filter: blur(0.6px); }
+        100% { transform: scale(1); filter: blur(0); }
+      }
+
+      @keyframes lux-sun-glow {
+        50% {
+          box-shadow:
+            0 0 34px 6 rgba(var(--lux-rgb), 1),
+            0 0 62px 14px rgba(var(--lux-rgb), 0.95);
+        }
+      }
+
+      @keyframes lux-sun-halo {
+        50% {
+          box-shadow:
+            0 0 160px 60px rgba(var(--lux-rgb), 0.6),
+            0 34px 120px -12px rgba(255, 230, 180, 0.6);
+        }
+      }
+    .: |
+      mushroom-shape-icon {
+        --icon-size: 64px;
+        display: flex;
+        margin: -18px 0 10px -20px !important;
+        padding-right: 22px;
+        padding-bottom: 10px;
+      }
+      ha-card {
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 14px));
+        
+        /* FONT SIZE & SPACING SETTINGS */
+        --card-primary-font-size: 1.5rem !important;
+        
+        /* Increases vertical space between primary and secondary */
+        --card-primary-line-height: 1.3 !important;
+      }
+
+```
+</details>
+
+<details>
+<summary><strong>53 - Alarmo (Requires card-mode v3.4.6)</strong></summary>
+
+```yaml
+type: custom:alarmo-card
+entity: alarm_control_panel.alarmo
+keep_keypad_visible: true
+card_mod:
+  style: |
+    {% set state = states(config.entity) %}
+
+    {% if state == 'disarmed' %}
+      {% set color = '0, 255, 100' %}  /* Green */
+      {% set glow_anim = 'glow-breathe 4s infinite' %}
+      
+    {% elif state == 'triggered' %}
+      {% set color = '255, 0, 0' %}    /* Red */
+      {% set glow_anim = 'glow-strobe 0.5s infinite' %}
+
+    /* ARMED HOME */
+    {% elif state == 'armed_home' %}
+      {% set color = '0, 191, 255' %}  /* Blue */
+      {% set glow_anim = 'glow-pulse 3s infinite' %}
+      
+    /* ARMED AWAY */
+    {% elif 'armed' in state %}
+      {% set color = '244, 67, 54' %}   /* Red */
+      {% set glow_anim = 'glow-pulse 3s infinite' %}
+
+    /* pending */
+    {% elif state == 'pending' %}
+      {% set color = '255, 152, 0' %}  /* Orange */
+      {% set glow_anim = 'glow-pulse 1s infinite' %}
+
+    /* loading and other */
+    {% else %}
+      {% set color = '158, 158, 158' %}  /* Grey */
+      {% set glow_anim = 'none' %}
+    {% endif %}
+
+    /* --- THE CARD Inner Glow --- */
+    ha-card {
+      background: #1c1c1c !important;
+
+      ## optional
+      ## border: 1px solid rgba({{ color }}, 0.5) !important;
+      border-radius: 25px !important;
+      color: white !important;
+      
+      /* The Inner Glow Logic */
+      box-shadow: inset 0 0 20px rgba({{ color }}, 0.2);
+      animation: {{ glow_anim }};
+      transition: all 1s ease;
+    }
+
+    /* --- ANIMATIONS (Card Glow Only) --- */
+
+    @keyframes glow-breathe {
+      0%   { box-shadow: inset 0 0 10px rgba({{ color }}, 0.1); }
+      50%  { box-shadow: inset 0 0 60px rgba({{ color }}, 0.4); border-color: rgba({{ color }}, 0.8); }
+      100% { box-shadow: inset 0 0 10px rgba({{ color }}, 0.1); }
+    }
+
+    @keyframes glow-pulse {
+      0%   { box-shadow: inset 0 0 20px rgba({{ color }}, 0.2); }
+      50%  { box-shadow: inset 0 0 50px rgba({{ color }}, 0.6); }
+      100% { box-shadow: inset 0 0 20px rgba({{ color }}, 0.2); }
+    }
+
+    @keyframes glow-strobe {
+      0%   { box-shadow: inset 0 0 10px rgba({{ color }}, 0.1); }
+      50%  { box-shadow: inset 0 0 100px rgba({{ color }}, 0.9); background: rgba({{ color }}, 0.1); }
+      100% { box-shadow: inset 0 0 10px rgba({{ color }}, 0.1); }
+    }
+
+```
+</details>
+
+<details>
+<summary><strong>54 - Smart Plug</strong></summary>
+
+```yaml
+type: custom:mushroom-entity-card
+entity: switch.plug_6_local
+tap_action:
+  action: toggle
+icon: mdi:power-socket-eu
+icon_color: green
+hold_action:
+  action: more-info
+double_tap_action:
+  action: none
+name: Smart Plug
+card_mod:
+  style:
+    .: |
+      ha-card {
+        /* ================= USER SETTINGS ================= */
+        {% set power_entity = 'sensor.plug_power' %}
+        {% set max_w = 50 %} 
+        /* ================================================= */
+
+        /* --- LOGIC --- */
+        {% set current_w = states(power_entity) | float(0) %}
+        
+        /* ACTIVE determines if animations/glows are ON (depends only on power) */
+        {% set active = current_w > 0 %}
+        
+        /* Calculate Load Percentage */
+        {% set width_pct = (current_w / max_w * 100) | round(2) %}
+        {% if width_pct > 100 %}{% set width_pct = 100 %}{% endif %}
+        
+        /* --- PASS VARIABLES TO CSS --- */
+        /* Define the color we want the effects to use (from config) */
+        --active-color: var(--rgb-{{ config.icon_color }});
+        
+        --bar-width: {{ width_pct }}%;
+        --bar-opacity: {{ 1 if active else 0 }};
+        
+        /* Text color: If power > 0, show colored text. Else dim. */
+        --text-color: {{ 'rgba(var(--active-color), 1)' if active else 'rgba(255,255,255,0.5)' }};
+        
+        /* PASS ANIMATION VARIABLES DOWN TO SHADOW DOM */
+        --shape-animation: {{ 'ultra-plug-on 3s ease-in-out infinite' if active else 'none' }};
+        --plug-glow-animation: {{ 'ultra-plug-glow 3s ease-in-out infinite' if active else 'none' }};
+        --plug-arcs-animation: {{ 'ultra-plug-arcs 3s linear infinite' if active else 'none' }};
+        --effect-opacity: {{ 1 if active else 0 }};
+        
+        /* --- CARD STYLING --- */
+        {% if active %}
+          background-color: #1c1c1c !important;
+          border: none !important;
+          background-image: 
+            radial-gradient(circle at 24px 24px, rgba(var(--active-color), 0.35) 0%, rgba(var(--active-color), 0.1) 40%, transparent 80%),
+            linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.1)) !important;
+          background-size: 100% 100%, 100% 6px !important;
+          background-position: top left, bottom left !important;
+          background-repeat: no-repeat !important;
+        {% else %}
+          /* When Power is 0: Clean slate */
+          background-image: none !important;
+          box-shadow: none !important;
+        {% endif %}
+
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.5s ease;
+      }
+
+      /* --- WATTAGE BADGE (Top Right) --- */
+      ha-card::before {
+        content: '{{ current_w | round(1) }} W';
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: var(--text-color);
+        
+        /* Only show badge background if active */
+        background: {{ 'rgba(0, 0, 0, 0.2)' if active else 'transparent' }};
+        border: {{ '1px solid rgba(255, 255, 255, 0.1)' if active else 'none' }};
+        
+        padding: 4px 8px;
+        border-radius: 6px;
+        backdrop-filter: blur(2px);
+        transition: all 0.5s ease;
+        z-index: 2;
+      }
+
+      /* --- ACTIVE PROGRESS BAR (BEAM) --- */
+      ha-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0;
+        height: 6px;
+        width: var(--bar-width);
+        
+        background: linear-gradient(90deg, 
+          rgba(var(--active-color), 0.4) 0%, 
+          rgba(var(--active-color), 1) 100%
+        );
+        
+        box-shadow: 0 -2px 15px rgba(var(--active-color), 0.9);
+        opacity: var(--bar-opacity);
+        transition: width 0.5s ease-out, opacity 0.5s ease;
+        animation: current-flow 1.5s infinite linear;
+      }
+
+      @keyframes current-flow {
+        0% { filter: brightness(1); opacity: 0.8; }
+        50% { filter: brightness(1.5); opacity: 1; }
+        100% { filter: brightness(1); opacity: 0.8; }
+      }
+
+      mushroom-shape-icon {
+        --icon-size: 65px;
+        display: flex;
+        margin: -20px 0 10px -20px !important;
+        padding-right: 15px;
+        padding-bottom: 15px;
+      }
+    mushroom-shape-icon$: >
+      .shape {
+        /* Receive animation variables from Main Card logic */
+        animation: var(--shape-animation) !important;
+        overflow: visible !important;
+        position: relative;
+      }
+
+
+      /* Create the Pseudo-Elements for Glow and Arcs */
+
+      .shape::before,
+
+      .shape::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: inherit;
+        pointer-events: none;
+        opacity: var(--effect-opacity); 
+      }
+
+
+      /* Glow Layer */
+
+      .shape::before {
+        animation: var(--plug-glow-animation);
+      }
+
+
+      /* Electric Arcs Layer */
+
+      .shape::after {
+        animation: var(--plug-arcs-animation);
+      }
+
+
+      /* --- ANIMATION KEYFRAMES --- */
+
+      /* Note: We use var(--active-color) so the glow stays green even if icon
+      is gray */
+
+
+      @keyframes ultra-plug-on {
+        0%   { transform: scale(1); }
+        25%  { transform: scale(1.05) translateY(-1px); }
+        50%  { transform: scale(1.08) translateY(-2px); }
+        75%  { transform: scale(1.04) translateY(-1px); }
+        100% { transform: scale(1); }
+      }
+
+
+      @keyframes ultra-plug-glow {
+        0% {
+          box-shadow:
+            0 0 10px 3px rgba(var(--active-color), 0.6),
+            0 0 20px 8px rgba(var(--active-color), 0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 18px 6px rgba(var(--active-color), 0.9),
+            0 0 32px 12px rgba(var(--active-color), 0.4);
+        }
+        100% {
+          box-shadow:
+            0 0 10px 3px rgba(var(--active-color), 0.6),
+            0 0 20px 8px rgba(var(--active-color), 0.3);
+        }
+      }
+
+
+      @keyframes ultra-plug-arcs {
+        0% {
+          box-shadow:
+            -10px -6px 0 -4px rgba(var(--active-color), 0.0),
+            12px 4px 0 -4px rgba(var(--active-color), 0.0);
+        }
+        25% {
+          box-shadow:
+            -10px -6px 0 -4px rgba(var(--active-color), 0.7),
+            12px 4px 0 -4px rgba(var(--active-color), 0.4);
+        }
+        50% {
+          box-shadow:
+            -6px 2px 0 -4px rgba(var(--active-color), 0.3),
+            10px -8px 0 -4px rgba(var(--active-color), 0.7);
+        }
+        75% {
+          box-shadow:
+            -12px 4px 0 -4px rgba(var(--active-color), 0.5),
+            8px 0 0 -4px rgba(var(--active-color), 0.2);
+        }
+        100% {
+          box-shadow:
+            -10px -6px 0 -4px rgba(var(--active-color), 0.0),
+            12px 4px 0 -4px rgba(var(--active-color), 0.0);
+        }
+      }
+
+```
+</details>
+
+
+<details>
+<summary><strong>55 - Mushroom Alarm</strong></summary>
+
+```yaml
+type: custom:mushroom-alarm-control-panel-card
+entity: alarm_control_panel.home_alarm
+states:
+  - armed_home
+  - armed_away
+layout: vertical
+fill_container: true
+primary_info: state
+secondary_info: none
+tap_action:
+  action: none
+hold_action:
+  action: none
+double_tap_action:
+  action: none
+card_mod:
+  style:
+    mushroom-shape-icon$: >
+      .shape {
+        /* --- LOGIC BLOCK --- */
+        {% set status = states(config.entity) %}
+        
+        {% if status == 'disarmed' %}
+          /* --- DISARMED --- */
+          --main-color: var(--rgb-green);
+          /* Shape: Floating effect */
+          --bg-anim: shield-float 3s ease-in-out infinite;
+          /* Inner: Light sheen scan */
+          --inner-style: linear-gradient(to bottom, transparent, rgba(255,255,255,0.4), transparent);
+          --inner-anim: sheen-scan 3s ease-in-out infinite;
+          /* Outer: None */
+          --outer-display: none;
+          /* ICON: Slow, calm breathing */
+          --icon-anim: breathe-slow 3s ease-in-out infinite;
+
+        {% elif status == 'triggered' %}
+          /* --- TRIGGERED --- */
+          --main-color: var(--rgb-deep-orange);
+          /* Shape: Strobe */
+          --bg-anim: panic-strobe 0.5s steps(2) infinite;
+          /* Inner: None */
+          --inner-style: none;
+          --inner-anim: none;
+          /* Outer: Shockwave */
+          --outer-display: block;
+          --outer-anim: shockwave 0.5s linear infinite;
+          /* ICON: Violent shake */
+          --icon-anim: violent-shake 0.1s linear infinite;
+
+        {% elif 'armed' in status %}
+          /* --- ARMED --- */
+          --main-color: var(--rgb-red);
+          /* Shape: Static */
+          --bg-anim: none;
+          /* Inner: Radar sweep gradient */
+          --inner-style: conic-gradient(from 0deg, transparent 0%, rgba(var(--main-color), 0.6) 20%, transparent 40%);
+          --inner-anim: radar-spin 2s linear infinite;
+          /* Outer: Sonar expansion */
+          --outer-display: block;
+          --outer-anim: sonar-expand 2s ease-out infinite;
+          /* ICON: Alert pulse */
+          --icon-anim: breathe-fast 2s ease-in-out infinite;
+
+        {% elif status == 'pending' %}
+          /* --- PENDING --- */
+          --main-color: var(--rgb-orange);
+          /* Shape: Breathing */
+          --bg-anim: arming-breathe 1s ease-in-out infinite;
+          /* Inner/Outer: None */
+          --inner-style: none;
+          --inner-anim: none;
+          --outer-display: none;
+          /* ICON: Medium pulse */
+          --icon-anim: breathe-medium 2s ease-in-out infinite;
+
+        {% else %}
+          /* UNKNOWN */
+          --main-color: var(--rgb-grey);
+          --bg-anim: none; --inner-style: none; --inner-anim: none; --outer-display: none; --icon-anim: none;
+        {% endif %}
+
+        /* --- SHAPE CONTAINER STYLING --- */
+        background-color: rgba(var(--main-color), 0.15) !important;
+        --icon-color: var(--main-color) !important;
+        color: rgb(var(--main-color)) !important;
+        
+        box-shadow: 0 0 25px rgba(var(--main-color), 0.3), inset 0 0 10px rgba(var(--main-color), 0.1);
+        border: 1px solid rgba(var(--main-color), 0.3);
+        
+        border-radius: 50% !important;
+        position: relative;
+        overflow: visible !important;
+        transition: all 0.5s ease;
+        animation: var(--bg-anim);
+      }
+
+
+      /* INNER EFFECT (Sheen or Radar Sweep) */
+
+      .shape::before {
+        content: ''; position: absolute; inset: 0; border-radius: 50%;
+        background: var(--inner-style); background-size: 100% 200%;
+        animation: var(--inner-anim); z-index: 1;
+      }
+
+
+      /* OUTER EFFECT (Sonar Ring or Shockwave) */
+
+      .shape::after {
+        content: ''; display: var(--outer-display); position: absolute; inset: -2px; border-radius: 50%;
+        border: 2px solid rgba(var(--main-color), 0.6);
+        animation: var(--outer-anim); z-index: -1;
+      }
+
+
+      /* ICON ANIMATION (Applied directly to the icon) */
+
+      ha-icon {
+        position: relative; z-index: 2;
+        animation: var(--icon-anim); transform-origin: center;
+      }
+
+
+      /* --- SHAPE & ICON ANIMATIONS --- */
+
+      @keyframes shield-float { 0%, 100% { transform: translateY(0); } 50% {
+      transform: translateY(-3px); } }
+
+      @keyframes sheen-scan { 0% { background-position: 0% 150%; opacity: 0; }
+      20%, 80% { opacity: 1; } 100% { background-position: 0% -50%; opacity: 0;
+      } }
+
+      @keyframes radar-spin { 0% { transform: rotate(0deg); } 100% { transform:
+      rotate(360deg); } }
+
+      @keyframes sonar-expand { 0% { transform: scale(1); opacity: 0.8;
+      border-width: 2px; } 100% { transform: scale(2.5); opacity: 0;
+      border-width: 0px; } }
+
+      @keyframes panic-strobe { 0% { background-color: rgba(var(--main-color),
+      0.2); box-shadow: 0 0 10px rgba(var(--main-color), 1); } 100% {
+      background-color: rgba(var(--main-color), 0.6); box-shadow: 0 0 50px
+      rgba(var(--main-color), 1); } }
+
+      @keyframes violent-shake { 0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(-3px, 3px) rotate(-5deg); } 50% { transform:
+      translate(3px, -3px) rotate(5deg); } 75% { transform: translate(-3px,
+      -3px) rotate(-5deg); } 100% { transform: translate(0, 0) rotate(0deg); } }
+
+      @keyframes shockwave { 0% { transform: scale(1); opacity: 1; } 100% {
+      transform: scale(1.5); opacity: 0; } }
+
+      @keyframes arming-breathe { 0%, 100% { box-shadow: 0 0 10px
+      rgba(var(--main-color), 0.5); } 50% { box-shadow: 0 0 30px
+      rgba(var(--main-color), 1); } }
+
+
+      /* Icon Breathing Animations */
+
+      @keyframes breathe-slow { 0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; } }
+
+      @keyframes breathe-medium { 0%, 100% { transform: scale(1); } 50% {
+      transform: scale(1.1); } }
+
+      @keyframes breathe-fast { 0%, 100% { transform: scale(1); } 50% {
+      transform: scale(1.15); } }
+    mushroom-alarm-control-panel-buttons-control$: |
+      mushroom-button {
+        --bg-color: rgba(var(--rgb-primary-text-color), 0.05) !important;
+        --button-color: rgb(var(--rgb-primary-text-color)) !important;
+        transition: all 0.2s ease;
+      }
+      mushroom-button:active {
+        background-color: rgba(var(--rgb-primary-color), 0.2) !important;
+      }
+    .: |
+      ha-card {
+        /* --- LOGIC FOR CARD GLOW --- */
+        {% set status = states(config.entity) %}
+        
+        {% if status == 'disarmed' %}
+          /* DISARMED: Green Glow */
+          --card-glow-color: var(--rgb-green);
+          --card-anim-speed: 2s; /* Slow & Calm */
+          
+        {% elif status == 'triggered' %}
+          /* TRIGGERED: Deep Orange/Red Strobe */
+          --card-glow-color: var(--rgb-deep-orange);
+          --card-anim-speed: 0.5s;
+          
+        {% elif status == 'pending' %}
+          /* PENDING: Orange */
+          --card-glow-color: var(--rgb-orange);
+          --card-anim-speed: 2s;
+          
+        {% else %}
+          /* ARMED (Any mode): Red Glow */
+          --card-glow-color: var(--rgb-red);
+          --card-anim-speed: 2s;
+        {% endif %}
+        
+        --card-fill-anim: card-fill-pulse var(--card-anim-speed) ease-in-out infinite alternate;
+
+        /* Base Card Styling */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(145deg, rgba(30,30,30,0.9) 0%, rgba(20,20,20,1) 100%);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        clip-path: inset(0 0 0 0 round var(--ha-card-border-radius, 12px));
+        position: relative;
+        overflow: hidden; /* Important to contain the glow */
+      }
+
+      /* THE CARD-FILLING GLOW LAYER */
+      ha-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        /* A large radial gradient that expands to fill the card */
+        background: radial-gradient(circle at center, rgba(var(--card-glow-color), 0.4) 0%, transparent 70%);
+        opacity: 0;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        animation: var(--card-fill-anim);
+        z-index: 0; /* Behind content but in front of background */
+      }
+
+      /* Animation for the card glow */
+      @keyframes card-fill-pulse {
+        0% { opacity: 0.1; transform: scale(0.8); }
+        100% { opacity: 0.6; transform: scale(1.5); }
+      }
+
+      /* Center the main icon */
+      mushroom-shape-icon {
+        --icon-size: 80px !important;
+        display: flex; justify-content: center; align-items: center;
+        margin: 20px 0 30px 0 !important;
+        position: relative; z-index: 1; /* Keep icon above the card glow */
+      }
+
+```
+</details>
+
 
 ---
 
