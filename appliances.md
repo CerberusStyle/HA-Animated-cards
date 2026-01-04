@@ -746,7 +746,7 @@ card_mod:
 </details>
 
 <details>
-<summary><strong>Dumb Washing Machine (Helper)</summary>
+<summary><strong>Dumb Dishwasher (Helper/Template)</summary>
 
 ```yaml
   - binary_sensor:
@@ -1020,7 +1020,7 @@ card_mod:
 </details>
 
 <details>
-<summary><strong>Dumb Washing Machine (Helper)</summary>
+<summary><strong>Dumb Washing Machine (Helper/Template)</summary>
 
 ```yaml
   - binary_sensor:
