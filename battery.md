@@ -684,11 +684,6 @@ card_mod:
       --stripe-speed: {{ '1.1s' if charging else '6.5s' }};
       --breath-speed: {{ '1.4s' if charging else '3.8s' }};
 
-      box-shadow:
-        0 10px 26px rgba(0,0,0,0.38),
-        inset 0 1px 0 rgba(255,255,255,0.04),
-        inset 0 -1px 0 rgba(0,0,0,0.25);
-
       padding-bottom: 28px !important;
       transition: all 0.3s ease;
       overflow: hidden;
@@ -823,11 +818,6 @@ card_mod:
       --border-speed: {{ '2.2s' if charging else '14s' }};
       --stripe-speed: {{ '1.1s' if charging else '6.5s' }};
       --breath-speed: {{ '1.4s' if charging else '3.8s' }};
-
-      box-shadow:
-        0 10px 26px rgba(0,0,0,0.38),
-        inset 0 1px 0 rgba(255,255,255,0.04),
-        inset 0 -1px 0 rgba(0,0,0,0.25);
 
       padding-bottom: 28px !important;
       transition: all 0.3s ease;
