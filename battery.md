@@ -169,23 +169,22 @@ card_mod:
         position: static !important;
       }
 
+      /* Light Theme (Default) */
       mushroom-state-item::after {
         content: '{{ level | round(0) }}%';
         position: absolute !important;
         top: 12px !important; 
         right: 12px !important;
         font-size: 1rem; font-weight: 700;
-        
-        background: rgba({{ color }}, 0.85);
-        border: 1px solid rgb({{ color }});
-        color: #ffffff;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         backdrop-filter: blur(4px);
-        
         padding: 2px 6px; border-radius: 4px;
         z-index: 4;
         pointer-events: none;
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: rgb({{ color }}) !important;
       }
 
       mushroom-shape-icon {
@@ -199,14 +198,6 @@ card_mod:
         z-index: 3;
       }
 
-      @media (prefers-color-scheme: dark) {
-        mushroom-state-item::after {
-          background: rgb({{ color }}, 0.7) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-          text-shadow: none !important;
-          box-shadow: none !important;
-        }
-      }
     mushroom-shape-icon$: |
       .shape {
         --liquid-level: var(--custom-level);
@@ -251,16 +242,6 @@ card_mod:
         color: white !important;
       }
 
-      @media (prefers-color-scheme: dark) {
-        .shape {
-          background: rgba(255, 255, 255, 0.05) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        ha-icon {
-          mix-blend-mode: overlay !important;
-        }
-      }
-
       @keyframes liquid-wave {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -294,11 +275,11 @@ card_mod:
         /* ====== USER SETTINGS ===== */
         {% set charging_entity = 'binary_sensor.anasbox_is_charging' %}
 
-        /* ========================== */
-
+        /* ======= FONT SETTINGS ======= */
         --card-primary-font-size: 15px !important;
         --card-secondary-font-size: 12px !important;
         --card-primary-font-weight: bold !important;
+        /* ========================== */
 
         {% set level_txt = states(config.entity) | lower %}
         {% set is_charging = is_state(charging_entity, 'on') %}
@@ -357,17 +338,15 @@ card_mod:
         top: 12px !important; 
         right: 12px !important;
         font-size: 1rem; font-weight: 700;
-        
-        background: rgba({{ color }}, 0.85);
-        border: 1px solid rgb({{ color }});
-        color: #ffffff;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
         box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         backdrop-filter: blur(4px);
-        
         padding: 2px 6px; border-radius: 4px;
         z-index: 4;
         pointer-events: none;
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: rgb({{ color }}) !important;
       }
 
       mushroom-shape-icon {
@@ -376,19 +355,10 @@ card_mod:
         padding-right: 15px;
         padding-bottom: 5px;
       }
-      
+
       mushroom-state-info {
         position: relative;
         z-index: 3;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        mushroom-state-item::after {
-          background: rgb({{ color }}, 0.7) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-          text-shadow: none !important;
-          box-shadow: none !important;
-        }
       }
     mushroom-shape-icon$: |
       .shape {
@@ -434,17 +404,6 @@ card_mod:
         z-index: 2;
         color: white !important;
       }
-
-      @media (prefers-color-scheme: dark) {
-        .shape {
-          background: rgba(255, 255, 255, 0.05) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-        ha-icon {
-          mix-blend-mode: overlay !important;
-        }
-      }
-
       @keyframes liquid-wave {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -454,6 +413,7 @@ card_mod:
         50% { opacity: 1; }
         100% { transform: translateY(-20px); opacity: 0; }
       }
+
 ````
 </details>
 
@@ -473,14 +433,13 @@ card_mod:
   style: |
     ha-card {
       /* ====== USER SETTINGS ===== */
-      {% set charging = 
-      is_state('binary_sensor.anasbox_is_charging', 'on') %}
-      /* ========================= */
+      {% set charging = is_state('binary_sensor.anasbox_is_charging', 'on') %}
       
       /* ======= FONT SETTINGS ======= */
       --card-primary-font-size: 15px !important;
       --card-secondary-font-size: 12px !important;
       --card-primary-font-weight: bold !important;
+      /* ========================= */
 
       {% set level = states(config.entity) | float(0) %}
       
@@ -593,7 +552,6 @@ card_mod:
       --card-primary-font-size: 15px !important;
       --card-secondary-font-size: 12px !important;
       --card-primary-font-weight: bold !important;
-    
       /* ========================= */
     
       {% set level_txt = states(config.entity) | lower %}
@@ -833,7 +791,6 @@ card_mod:
       --card-primary-font-size: 15px !important;
       --card-secondary-font-size: 12px !important;
       --card-primary-font-weight: bold !important;
-
       /* ========================= */
 
       {% set level_txt = states(config.entity) | lower %}
